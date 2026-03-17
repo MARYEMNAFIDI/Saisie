@@ -1,0 +1,13 @@
+
+> saisie-equine-prototype@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by process 28536, using available port 3003 instead.
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3003
+- Network:       http://192.168.10.113:3003
+
+✓ Starting...
+⨯ Unable to acquire lock at C:\Users\pc gold\Desktop\Saisie\.next\dev\lock, is another instance of next dev running?
+  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+[?25h

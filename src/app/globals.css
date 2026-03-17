@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 214 43% 97%;
+    --foreground: 221 39% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
+    --primary: 221 63% 16%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 215 42% 95%;
+    --secondary-foreground: 221 39% 15%;
+    --muted: 216 34% 94%;
+    --muted-foreground: 217 16% 43%;
+    --accent: 191 93% 42%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 66% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 216 30% 87%;
+    --input: 216 30% 87%;
+    --ring: 191 93% 42%;
+    --radius: 1.25rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-background font-sans text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 8% 6%, rgba(56, 189, 248, 0.14), transparent 24%),
+      radial-gradient(circle at 88% 10%, rgba(14, 165, 233, 0.12), transparent 18%),
+      radial-gradient(circle at 50% 120%, rgba(15, 23, 42, 0.1), transparent 42%),
+      linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(238, 244, 252, 0.96) 100%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-slate-950;
+  }
+}
+
+@layer components {
+  .hero-panel {
+    @apply relative overflow-hidden rounded-[2rem] shadow-panel backdrop-blur-xl;
+    border-color: rgba(203, 213, 225, 0.58);
+    background:
+      linear-gradient(180deg, rgba(241, 245, 249, 0.82) 0%, rgba(232, 240, 248, 0.78) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.44),
+      0 32px 80px -42px rgba(15, 23, 42, 0.5),
+      0 20px 34px -24px rgba(8, 47, 73, 0.18);
+  }
+
+  .surface-card {
+    @apply rounded-[1.75rem] shadow-soft backdrop-blur-xl;
+    border-color: rgba(203, 213, 225, 0.62);
+    background:
+      linear-gradient(180deg, rgba(241, 245, 249, 0.8) 0%, rgba(234, 241, 248, 0.76) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.38),
+      0 24px 54px -34px rgba(15, 23, 42, 0.24);
+  }
+
+  .section-caption {
+    @apply text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500;
+  }
+
+  .soft-grid {
+    background-image: theme("backgroundImage.grid");
+    background-size: 28px 28px;
+  }
+}
