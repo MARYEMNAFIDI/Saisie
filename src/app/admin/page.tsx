@@ -1810,15 +1810,16 @@ export default function AdminPage() {
       </Tabs>
 
       {isExcelModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <Card className="w-full max-w-3xl">
-            <CardHeader>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-3 sm:p-6">
+          <div className="mx-auto flex min-h-full w-full max-w-3xl items-center justify-center">
+          <Card className="flex max-h-[92vh] w-full flex-col overflow-hidden">
+            <CardHeader className="shrink-0 border-b border-border">
               <CardTitle>Selection de l export XLSX</CardTitle>
               <CardDescription>
                 Choisissez le type de donnees a exporter puis validez le telechargement.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="flex-1 space-y-6 overflow-y-auto p-6">
               <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-foreground">Profil d export</p>
@@ -1943,27 +1944,27 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex flex-wrap justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    resetExcelSelection();
-                    setIsExcelModalOpen(false);
-                  }}
-                >
-                  Annuler
-                </Button>
-                <Button variant="ghost" onClick={resetExcelSelection}>
-                  Reinitialiser les filtres
-                </Button>
-                <Button onClick={handleExcelExport}>
-                  <Download className="h-4 w-4" />
-                  Telecharger XLSX
-                </Button>
-              </div>
             </CardContent>
+            <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-border bg-card/95 p-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  resetExcelSelection();
+                  setIsExcelModalOpen(false);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button variant="ghost" onClick={resetExcelSelection}>
+                Reinitialiser les filtres
+              </Button>
+              <Button onClick={handleExcelExport}>
+                <Download className="h-4 w-4" />
+                Telecharger XLSX
+              </Button>
+            </div>
           </Card>
+          </div>
         </div>
       ) : null}
     </main>
