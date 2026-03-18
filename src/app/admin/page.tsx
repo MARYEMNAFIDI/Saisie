@@ -617,12 +617,17 @@ export default function AdminPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportColumns = {
+    saillieNumber: "N SAILLIE",
+    esiremaNumber: "N Esirema",
+  } as const;
+
   const reproductionBaseRows: XlsxRow[] = exportReproductions.map((record, index) => {
     const mare = mareById[record.mareId];
     return {
-      "N° SAILLIE": index + 1,
+      [exportColumns.saillieNumber]: index + 1,
       Jument: mare?.name ?? record.mareId,
-      "N° Esirema": record.previousProductSirema || "N/A",
+      [exportColumns.esiremaNumber]: record.previousProductSirema || "N/A",
       Race: mare?.breed ?? "",
       AGE: getAgeFromBirthDate(mare?.birthDate ?? ""),
       "Etalon N-1": record.stallion,
@@ -643,7 +648,7 @@ export default function AdminPage() {
     const mare = mareById[record.mareId];
     return {
       Jument: mare?.name ?? record.mareId,
-      "N° Esirema": record.siremaProduct,
+      [exportColumns.esiremaNumber]: record.siremaProduct,
       Race: record.breed || mare?.breed || "",
       AGE: getAgeFromBirthDate(mare?.birthDate ?? ""),
       "Date naissance": record.birthDate,
@@ -656,6 +661,76 @@ export default function AdminPage() {
       CRE: getCentreLabel(record.centreId),
     };
   });
+  const reproductionBaseTemplateRow: XlsxRow = {
+    [exportColumns.saillieNumber]: "Ex: 1",
+    Jument: "Exemple Jument",
+    [exportColumns.esiremaNumber]: "20101307C",
+    Race: "Barbe",
+    AGE: 8,
+    "Etalon N-1": "Exemple Etalon",
+    "Resultat diagnostic": "PP",
+    "1er Cycle": "2026-01-10",
+    "2eme Cycle": "2026-02-10",
+    "3eme cycle": "2026-03-10",
+    "4eme cycle": "2026-04-10",
+    "Resultat cycle": "Resultat obtenu au cycle 2",
+    Proprietaire: "Exemple Proprietaire",
+    Haras: "Exemple Haras",
+    CRE: "Exemple CRE",
+    Incidents: "Retour chaleur | Non-ovulation",
+  };
+  const productionBaseTemplateRow: XlsxRow = {
+    Jument: "Exemple Jument",
+    [exportColumns.esiremaNumber]: "20101307C",
+    Race: "Barbe",
+    AGE: 8,
+    "Date naissance": "2026-03-15",
+    Sexe: "Femelle",
+    "Statut production": "Declare",
+    Declaration: "Declaree",
+    Identification: "Identifie",
+    Proprietaire: "Exemple Proprietaire",
+    Haras: "Exemple Haras",
+    CRE: "Exemple CRE",
+  };
+  const reproductionRowsForExport =
+    reproductionBaseRows.length > 0
+      ? reproductionBaseRows
+      : [reproductionBaseTemplateRow];
+  const productionRowsForExport =
+    productionBaseRows.length > 0 ? productionBaseRows : [productionBaseTemplateRow];
+  const jumentTemplateRow: XlsxRow = {
+    nom: "Exemple Jument",
+    faras: "FARAS-EX-001",
+    haras: "Exemple Haras",
+    cre: "Exemple CRE",
+    saison: "2025-2026",
+    proprietaire: "Exemple Proprietaire",
+    admission: "acceptee",
+  };
+  const creTemplateRow: XlsxRow = {
+    cre: "Centre de reproduction equine de Exemple",
+    haras: "Exemple Haras",
+    type: "centre",
+    region: "Exemple Region",
+    manager: "Exemple Manager",
+    statut_sync: "synchronise",
+  };
+  const harasTemplateRow: XlsxRow = {
+    haras: "Haras National Exemple",
+    ville: "Exemple Ville",
+    statut: "Saison ouverte",
+    cre_total: 0,
+    code_acces: "",
+  };
+  const utilisateurTemplateRow: XlsxRow = {
+    nom: "Exemple Utilisateur",
+    login: "exemple.user",
+    role: "viewer",
+    statut: "active",
+    haras: "Exemple Haras",
+    cre: "Tout le haras",
+  };
 
   const buildExportWorkbook = () => {
     switch (exportType) {
@@ -663,8 +738,8 @@ export default function AdminPage() {
         return {
           filename: "sorec-base-metier-prioritaire.xlsx",
           sheets: [
-            { sheetName: "Base_infos", rows: reproductionBaseRows },
-            { sheetName: "Production", rows: productionBaseRows },
+            { sheetName: "Base_infos", rows: reproductionRowsForExport },
+            { sheetName: "Production", rows: productionRowsForExport },
             {
               sheetName: "Indices_fertilite",
               rows: buildFertilityRows(exportMares, exportReproductions, exportProducts),
@@ -672,62 +747,63 @@ export default function AdminPage() {
           ],
         };
       case "haras":
+        const harasRows = harasList
+          .filter((haras) =>
+            excelSelection.harasIds.length === 0
+              ? true
+              : excelSelection.harasIds.includes(haras.id),
+          )
+          .map((haras) => ({
+            haras: haras.name,
+            ville: haras.city,
+            statut: haras.statusLabel,
+            cre_total: haras.centres.length,
+            code_acces:
+              directory.harasCredentials.find((credential) => credential.harasId === haras.id)
+                ?.code ?? "",
+          }));
         return {
           filename: "sorec-haras.xlsx",
           sheets: [
             {
               sheetName: "Haras",
-              rows: harasList
-                .filter((haras) =>
-                  excelSelection.harasIds.length === 0
-                    ? true
-                    : excelSelection.harasIds.includes(haras.id),
-                )
-                .map((haras) => ({
-                  haras: haras.name,
-                  ville: haras.city,
-                  statut: haras.statusLabel,
-                  cre_total: haras.centres.length,
-                  code_acces:
-                    directory.harasCredentials.find(
-                      (credential) => credential.harasId === haras.id,
-                    )?.code ?? "",
-                })),
+              rows: harasRows.length > 0 ? harasRows : [harasTemplateRow],
             },
           ],
         };
       case "cre":
+        const centreRows = scopedExportCentres
+          .filter((centre) =>
+            excelSelection.centreIds.length === 0
+              ? true
+              : excelSelection.centreIds.includes(centre.id),
+          )
+          .map((centre) => ({
+            cre: centre.name,
+            haras: getHarasLabel(centre.harasId),
+            type: centre.type,
+            region: centre.region,
+            manager: centre.manager,
+            statut_sync: centre.status,
+          }));
         return {
           filename: "sorec-cre.xlsx",
           sheets: [
             {
               sheetName: "CRE",
-              rows: scopedExportCentres
-                .filter((centre) =>
-                  excelSelection.centreIds.length === 0
-                    ? true
-                    : excelSelection.centreIds.includes(centre.id),
-                )
-                .map((centre) => ({
-                  cre: centre.name,
-                  haras: getHarasLabel(centre.harasId),
-                  type: centre.type,
-                  region: centre.region,
-                  manager: centre.manager,
-                  statut_sync: centre.status,
-                })),
+              rows: centreRows.length > 0 ? centreRows : [creTemplateRow],
             },
           ],
         };
       case "reproduction":
         return {
           filename: "sorec-reproduction-base.xlsx",
-          sheets: [{ sheetName: "Reproduction", rows: reproductionBaseRows }],
+          sheets: [{ sheetName: "Reproduction", rows: reproductionRowsForExport }],
         };
       case "production":
         return {
           filename: "sorec-production-base.xlsx",
-          sheets: [{ sheetName: "Production", rows: productionBaseRows }],
+          sheets: [{ sheetName: "Production", rows: productionRowsForExport }],
         };
       case "utilisateurs":
         return {
@@ -735,14 +811,17 @@ export default function AdminPage() {
           sheets: [
             {
               sheetName: "Utilisateurs",
-              rows: directory.managedUsers.map((user) => ({
-                nom: user.fullName,
-                login: user.username,
-                role: user.role,
-                statut: user.status,
-                haras: user.harasIds.map(getHarasLabel).join(" | "),
-                cre: user.centreIds.map(getCentreLabel).join(" | "),
-              })),
+              rows:
+                directory.managedUsers.length > 0
+                  ? directory.managedUsers.map((user) => ({
+                      nom: user.fullName,
+                      login: user.username,
+                      role: user.role,
+                      statut: user.status,
+                      haras: user.harasIds.map(getHarasLabel).join(" | "),
+                      cre: user.centreIds.map(getCentreLabel).join(" | "),
+                    }))
+                  : [utilisateurTemplateRow],
             },
           ],
         };
@@ -753,15 +832,18 @@ export default function AdminPage() {
           sheets: [
             {
               sheetName: "Juments",
-              rows: exportMares.map((record) => ({
-                nom: record.name,
-                faras: record.farasNumber,
-                haras: getHarasLabel(record.harasId),
-                cre: getCentreLabel(record.centreId),
-                saison: record.season,
-                proprietaire: record.owner,
-                admission: record.admissionStatus,
-              })),
+              rows:
+                exportMares.length > 0
+                  ? exportMares.map((record) => ({
+                      nom: record.name,
+                      faras: record.farasNumber,
+                      haras: getHarasLabel(record.harasId),
+                      cre: getCentreLabel(record.centreId),
+                      saison: record.season,
+                      proprietaire: record.owner,
+                      admission: record.admissionStatus,
+                    }))
+                  : [jumentTemplateRow],
             },
           ],
         };
@@ -769,13 +851,23 @@ export default function AdminPage() {
   };
 
   const exportPreviewText = (() => {
+    const reproductionTemplateMode = reproductionBaseRows.length === 0;
+    const productionTemplateMode = productionBaseRows.length === 0;
+
     switch (exportType) {
       case "base_metier":
+        if (reproductionTemplateMode && productionTemplateMode) {
+          return "Mode canevas actif: 0 ligne reelle, ligne exemple incluse (reproduction + production + fertilite).";
+        }
         return `${reproductionBaseRows.length} lignes reproduction, ${productionBaseRows.length} lignes production, 3 indices fertilite.`;
       case "reproduction":
-        return `${reproductionBaseRows.length} lignes reproduction base.`;
+        return reproductionTemplateMode
+          ? "Mode canevas actif: 0 ligne reelle, ligne exemple reproduction incluse."
+          : `${reproductionBaseRows.length} lignes reproduction base.`;
       case "production":
-        return `${productionBaseRows.length} lignes production base.`;
+        return productionTemplateMode
+          ? "Mode canevas actif: 0 ligne reelle, ligne exemple production incluse."
+          : `${productionBaseRows.length} lignes production base.`;
       case "juments":
         return `${exportMares.length} lignes juments.`;
       case "cre":
