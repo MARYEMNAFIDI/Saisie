@@ -53,7 +53,6 @@ export const AccessGate = ({
   const { authenticate, session } = useSession();
   const { getUsersForScope } = useAdminProvider();
 
-  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [feedback, setFeedback] = useState<{
@@ -122,7 +121,6 @@ export const AccessGate = ({
       harasId,
       scope,
       centreId,
-      code,
       password,
       role: selectedRole,
       userId: selectedUser.id,
@@ -164,7 +162,7 @@ export const AccessGate = ({
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-white/75 lg:text-base">
                 L'entree a ete simplifiee: choisissez votre nom, saisissez votre
-                mot de passe et le code du haras, puis ouvrez directement l'espace
+                mot de passe, puis ouvrez directement l'espace
                 correspondant.
               </p>
             </div>
@@ -183,8 +181,8 @@ export const AccessGate = ({
                 },
                 {
                   icon: Shield,
-                  title: "3. Le code",
-                  text: "Ajoutez le code du haras puis ouvrez l'espace.",
+                  title: "3. Validation",
+                  text: "Ouvrez votre espace si les identifiants sont corrects.",
                 },
               ].map((item) => {
                 const Icon = item.icon;
@@ -228,8 +226,7 @@ export const AccessGate = ({
             <div>
               <CardTitle className="text-3xl">Entrer dans l'espace</CardTitle>
               <CardDescription className="mt-2">
-                Selectionnez votre profil puis saisissez votre mot de passe et le
-                code d'acces.
+                Selectionnez votre profil puis saisissez votre mot de passe.
               </CardDescription>
             </div>
             <RoleBadge role={selectedRole} />
@@ -282,17 +279,6 @@ export const AccessGate = ({
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Saisir le mot de passe"
                 autoComplete="current-password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="code">Code d'acces</Label>
-              <Input
-                id="code"
-                value={code}
-                onChange={(event) => setCode(event.target.value.toUpperCase())}
-                placeholder="Saisir le code"
-                autoComplete="off"
               />
             </div>
 

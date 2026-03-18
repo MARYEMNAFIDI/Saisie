@@ -73,6 +73,8 @@ type UserDraft = {
   lastPasswordUpdate?: string;
 };
 
+const ALL_HARAS = "all";
+
 const createUserDraft = (): UserDraft => ({
   fullName: "",
   username: "",
@@ -110,12 +112,136 @@ type ExportSelection = {
 };
 
 type AdminExportType =
+  | "base_metier"
   | "haras"
   | "cre"
   | "juments"
   | "reproduction"
   | "production"
   | "utilisateurs";
+
+type XlsxRow = Record<string, string | number | boolean>;
+type XlsxSheet = {
+  sheetName: string;
+  rows: XlsxRow[];
+};
+
+const adminExportOptions: Array<{
+  id: AdminExportType;
+  label: string;
+  description: string;
+  recommended?: boolean;
+}> = [
+  {
+    id: "base_metier",
+    label: "Base metier prioritaire",
+    description: "Reproduction + Production + Fertilite dans un seul fichier XLSX.",
+    recommended: true,
+  },
+  { id: "reproduction", label: "Reproduction", description: "Cycles, diagnostic, incidents." },
+  { id: "production", label: "Production", description: "Naissance, statut, declaration." },
+  { id: "juments", label: "Juments", description: "Fiches juments essentielles." },
+  { id: "cre", label: "CRE", description: "Centres de reproduction equine." },
+  { id: "haras", label: "Haras", description: "Referentiel haras." },
+  { id: "utilisateurs", label: "Utilisateurs", description: "Comptes metier et roles." },
+];
+
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const computeRatio = (numerator: number, denominator: number) =>
+  denominator > 0 ? (numerator / denominator) * 100 : 0;
+
+const formatPercent = (value: number) =>
+  new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+  }).format(value);
+
+const getAgeFromBirthDate = (birthDate: string) => {
+  if (!birthDate) {
+    return "";
+  }
+
+  const date = new Date(birthDate);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const hasNotHadBirthday =
+    today.getMonth() < date.getMonth() ||
+    (today.getMonth() === date.getMonth() && today.getDate() < date.getDate());
+
+  if (hasNotHadBirthday) {
+    age -= 1;
+  }
+
+  return age >= 0 ? age : "";
+};
+
+const getIncidentSummary = (record: ReproductionRecord) => {
+  const incidents: string[] = [];
+  if (record.heatReturn) incidents.push("Retour chaleur");
+  if (record.abortion) incidents.push("Avortement");
+  if (record.embryoResorption) incidents.push("Resorption embryonnaire");
+  if (record.nonOvulation) incidents.push("Non-ovulation");
+  if (record.uterineInfection) incidents.push("Infection uterine");
+  if (record.twinPregnancy) incidents.push("Gestation gemellaire");
+  if (record.traumaticAccident) incidents.push("Accident traumatique");
+  return incidents.join(" | ");
+};
+
+const buildFertilityRows = (
+  mares: MareRecord[],
+  reproductions: ReproductionRecord[],
+  products: ProductRecord[],
+): XlsxRow[] => {
+  const confirmedGestations = reproductions.filter((record) => {
+    const diagnosis = normalizeText(record.diagnosis);
+    return (
+      diagnosis.includes("gestante") ||
+      diagnosis.includes("confirme") ||
+      diagnosis.includes("positive") ||
+      diagnosis === "pp" ||
+      diagnosis === "mb"
+    );
+  }).length;
+
+  const maresWithProduction = new Set(products.map((record) => record.mareId)).size;
+
+  const conception = computeRatio(confirmedGestations, reproductions.length);
+  const production = computeRatio(products.length, reproductions.length);
+  const global = computeRatio(maresWithProduction, mares.length);
+
+  return [
+    {
+      Indice: "Conception",
+      Formule: "(Gestations confirmees / Suivis reproduction) x 100",
+      Numerateur: confirmedGestations,
+      Denominateur: reproductions.length,
+      "Valeur %": formatPercent(conception),
+    },
+    {
+      Indice: "Production",
+      Formule: "(Productions / Suivis reproduction) x 100",
+      Numerateur: products.length,
+      Denominateur: reproductions.length,
+      "Valeur %": formatPercent(production),
+    },
+    {
+      Indice: "Fertilite globale",
+      Formule: "(Juments productives / Juments suivies) x 100",
+      Numerateur: maresWithProduction,
+      Denominateur: mares.length,
+      "Valeur %": formatPercent(global),
+    },
+  ];
+};
 
 const findCentre = (centreId: string) =>
   allCentres.find((centre) => centre.id === centreId);
@@ -290,7 +416,7 @@ export default function AdminPage() {
   });
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
-  const [exportType, setExportType] = useState<AdminExportType>("juments");
+  const [exportType, setExportType] = useState<AdminExportType>("base_metier");
   const [excelSelection, setExcelSelection] = useState<ExportSelection>({
     harasIds: [],
     centreIds: [],
@@ -298,8 +424,10 @@ export default function AdminPage() {
 
   const totalRecords = mares.length + reproductions.length + products.length;
   const activeUsers = directory.managedUsers.filter((user) => user.status === "active");
+  const allHarasIds = harasList.map((haras) => haras.id);
   const selectedHarasCentres = allCentres.filter(
-    (centre) => centre.harasId === userDraft.harasId,
+    (centre) =>
+      userDraft.harasId === ALL_HARAS || centre.harasId === userDraft.harasId,
   );
 
   const filteredMares = mares.filter((record) => {
@@ -352,6 +480,7 @@ export default function AdminPage() {
     excelSelection.centreIds.length === 0
       ? "Tous les centres / CRE"
       : excelSelection.centreIds.map(getCentreLabel).join(", ");
+  const mareById = Object.fromEntries(mares.map((mare) => [mare.id, mare]));
 
   const structuredPayload = useMemo(
     () => ({
@@ -387,6 +516,9 @@ export default function AdminPage() {
       return;
     }
 
+    const selectedHarasIds =
+      userDraft.harasId === ALL_HARAS ? allHarasIds : [userDraft.harasId];
+
     const savedUser = upsertManagedUser({
       id: userDraft.id,
       fullName: userDraft.fullName,
@@ -396,12 +528,14 @@ export default function AdminPage() {
       phone: userDraft.phone,
       role: userDraft.role,
       status: userDraft.status,
-      harasIds: [userDraft.harasId],
+      harasIds: selectedHarasIds,
       centreIds: userDraft.centreId === "all" ? [] : [userDraft.centreId],
       notes: userDraft.notes,
       createdAt: userDraft.createdAt,
       lastPasswordUpdate: userDraft.lastPasswordUpdate,
     });
+
+    const hasAllHaras = savedUser.harasIds.length === allHarasIds.length;
 
     setUserDraft({
       id: savedUser.id,
@@ -412,7 +546,7 @@ export default function AdminPage() {
       phone: savedUser.phone,
       role: savedUser.role,
       status: savedUser.status,
-      harasId: savedUser.harasIds[0] ?? harasList[0].id,
+      harasId: hasAllHaras ? ALL_HARAS : savedUser.harasIds[0] ?? harasList[0].id,
       centreId: savedUser.centreIds[0] ?? "all",
       notes: savedUser.notes,
       createdAt: savedUser.createdAt,
@@ -460,17 +594,16 @@ export default function AdminPage() {
     setExcelSelection({ harasIds: [], centreIds: [] });
   };
 
-  const downloadXlsx = (
-    filename: string,
-    sheetName: string,
-    rows: Array<Record<string, string | number | boolean>>,
-  ) => {
+  const downloadXlsxWorkbook = (filename: string, sheets: XlsxSheet[]) => {
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(
-      rows.length > 0 ? rows : [{ message: "Aucune donnee a exporter." }],
-    );
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    sheets.forEach((sheet) => {
+      const worksheet = XLSX.utils.json_to_sheet(
+        sheet.rows.length > 0 ? sheet.rows : [{ message: "Aucune donnee a exporter." }],
+      );
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheet.sheetName);
+    });
+
     const arrayBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const blob = new Blob([arrayBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -484,113 +617,184 @@ export default function AdminPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const buildExportRows = () => {
+  const reproductionBaseRows: XlsxRow[] = exportReproductions.map((record, index) => {
+    const mare = mareById[record.mareId];
+    return {
+      "N° SAILLIE": index + 1,
+      Jument: mare?.name ?? record.mareId,
+      "N° Esirema": record.previousProductSirema || "N/A",
+      Race: mare?.breed ?? "",
+      AGE: getAgeFromBirthDate(mare?.birthDate ?? ""),
+      "Etalon N-1": record.stallion,
+      "Resultat diagnostic": record.diagnosis,
+      "1er Cycle": record.firstCycleDate,
+      "2eme Cycle": record.secondCycleDate,
+      "3eme cycle": record.thirdCycleDate,
+      "4eme cycle": record.fourthCycleDate,
+      "Resultat cycle": record.cycleResult,
+      Proprietaire: mare?.owner ?? "",
+      Haras: getHarasLabel(record.harasId),
+      CRE: getCentreLabel(record.centreId),
+      Incidents: getIncidentSummary(record),
+    };
+  });
+
+  const productionBaseRows: XlsxRow[] = exportProducts.map((record) => {
+    const mare = mareById[record.mareId];
+    return {
+      Jument: mare?.name ?? record.mareId,
+      "N° Esirema": record.siremaProduct,
+      Race: record.breed || mare?.breed || "",
+      AGE: getAgeFromBirthDate(mare?.birthDate ?? ""),
+      "Date naissance": record.birthDate,
+      Sexe: record.sex,
+      "Statut production": record.productStatus,
+      Declaration: record.declaration,
+      Identification: record.identification,
+      Proprietaire: mare?.owner ?? "",
+      Haras: getHarasLabel(record.harasId),
+      CRE: getCentreLabel(record.centreId),
+    };
+  });
+
+  const buildExportWorkbook = () => {
     switch (exportType) {
+      case "base_metier":
+        return {
+          filename: "sorec-base-metier-prioritaire.xlsx",
+          sheets: [
+            { sheetName: "Base_infos", rows: reproductionBaseRows },
+            { sheetName: "Production", rows: productionBaseRows },
+            {
+              sheetName: "Indices_fertilite",
+              rows: buildFertilityRows(exportMares, exportReproductions, exportProducts),
+            },
+          ],
+        };
       case "haras":
         return {
           filename: "sorec-haras.xlsx",
-          sheetName: "Haras",
-          rows: harasList
-            .filter((haras) =>
-              excelSelection.harasIds.length === 0
-                ? true
-                : excelSelection.harasIds.includes(haras.id),
-            )
-            .map((haras) => ({
-              haras: haras.name,
-              ville: haras.city,
-              statut: haras.statusLabel,
-              cre_total: haras.centres.length,
-              code_acces:
-                directory.harasCredentials.find((credential) => credential.harasId === haras.id)
-                  ?.code ?? "",
-            })),
+          sheets: [
+            {
+              sheetName: "Haras",
+              rows: harasList
+                .filter((haras) =>
+                  excelSelection.harasIds.length === 0
+                    ? true
+                    : excelSelection.harasIds.includes(haras.id),
+                )
+                .map((haras) => ({
+                  haras: haras.name,
+                  ville: haras.city,
+                  statut: haras.statusLabel,
+                  cre_total: haras.centres.length,
+                  code_acces:
+                    directory.harasCredentials.find(
+                      (credential) => credential.harasId === haras.id,
+                    )?.code ?? "",
+                })),
+            },
+          ],
         };
       case "cre":
         return {
           filename: "sorec-cre.xlsx",
-          sheetName: "CRE",
-          rows: scopedExportCentres
-            .filter((centre) =>
-              excelSelection.centreIds.length === 0
-                ? true
-                : excelSelection.centreIds.includes(centre.id),
-            )
-            .map((centre) => ({
-              cre: centre.name,
-              haras: getHarasLabel(centre.harasId),
-              type: centre.type,
-              region: centre.region,
-              manager: centre.manager,
-              statut_sync: centre.status,
-            })),
+          sheets: [
+            {
+              sheetName: "CRE",
+              rows: scopedExportCentres
+                .filter((centre) =>
+                  excelSelection.centreIds.length === 0
+                    ? true
+                    : excelSelection.centreIds.includes(centre.id),
+                )
+                .map((centre) => ({
+                  cre: centre.name,
+                  haras: getHarasLabel(centre.harasId),
+                  type: centre.type,
+                  region: centre.region,
+                  manager: centre.manager,
+                  statut_sync: centre.status,
+                })),
+            },
+          ],
         };
       case "reproduction":
         return {
-          filename: "sorec-reproduction.xlsx",
-          sheetName: "Reproduction",
-          rows: exportReproductions.map((record) => ({
-            jument: mares.find((mare) => mare.id === record.mareId)?.name ?? record.mareId,
-            etalon: record.stallion,
-            haras: getHarasLabel(record.harasId),
-            cre: getCentreLabel(record.centreId),
-            cycle_total: record.totalCycles,
-            diagnostic: record.diagnosis,
-            date_cycle_1: record.firstCycleDate,
-            date_cycle_2: record.secondCycleDate,
-            date_cycle_3: record.thirdCycleDate,
-            date_cycle_4: record.fourthCycleDate,
-          })),
+          filename: "sorec-reproduction-base.xlsx",
+          sheets: [{ sheetName: "Reproduction", rows: reproductionBaseRows }],
         };
       case "production":
         return {
-          filename: "sorec-production.xlsx",
-          sheetName: "Production",
-          rows: exportProducts.map((record) => ({
-            jument: mares.find((mare) => mare.id === record.mareId)?.name ?? record.mareId,
-            haras: getHarasLabel(record.harasId),
-            cre: getCentreLabel(record.centreId),
-            sirema: record.siremaProduct,
-            date_naissance: record.birthDate,
-            statut: record.productStatus,
-            sexe: record.sex,
-            race: record.breed,
-          })),
+          filename: "sorec-production-base.xlsx",
+          sheets: [{ sheetName: "Production", rows: productionBaseRows }],
         };
       case "utilisateurs":
         return {
           filename: "sorec-utilisateurs.xlsx",
-          sheetName: "Utilisateurs",
-          rows: directory.managedUsers.map((user) => ({
-            nom: user.fullName,
-            login: user.username,
-            role: user.role,
-            statut: user.status,
-            haras: user.harasIds.map(getHarasLabel).join(" | "),
-            cre: user.centreIds.map(getCentreLabel).join(" | "),
-          })),
+          sheets: [
+            {
+              sheetName: "Utilisateurs",
+              rows: directory.managedUsers.map((user) => ({
+                nom: user.fullName,
+                login: user.username,
+                role: user.role,
+                statut: user.status,
+                haras: user.harasIds.map(getHarasLabel).join(" | "),
+                cre: user.centreIds.map(getCentreLabel).join(" | "),
+              })),
+            },
+          ],
         };
       case "juments":
       default:
         return {
           filename: "sorec-juments.xlsx",
-          sheetName: "Juments",
-          rows: exportMares.map((record) => ({
-            nom: record.name,
-            faras: record.farasNumber,
-            haras: getHarasLabel(record.harasId),
-            cre: getCentreLabel(record.centreId),
-            saison: record.season,
-            proprietaire: record.owner,
-            admission: record.admissionStatus,
-          })),
+          sheets: [
+            {
+              sheetName: "Juments",
+              rows: exportMares.map((record) => ({
+                nom: record.name,
+                faras: record.farasNumber,
+                haras: getHarasLabel(record.harasId),
+                cre: getCentreLabel(record.centreId),
+                saison: record.season,
+                proprietaire: record.owner,
+                admission: record.admissionStatus,
+              })),
+            },
+          ],
         };
     }
   };
 
+  const exportPreviewText = (() => {
+    switch (exportType) {
+      case "base_metier":
+        return `${reproductionBaseRows.length} lignes reproduction, ${productionBaseRows.length} lignes production, 3 indices fertilite.`;
+      case "reproduction":
+        return `${reproductionBaseRows.length} lignes reproduction base.`;
+      case "production":
+        return `${productionBaseRows.length} lignes production base.`;
+      case "juments":
+        return `${exportMares.length} lignes juments.`;
+      case "cre":
+        return `${scopedExportCentres.length} CRE disponibles.`;
+      case "haras":
+        return `${harasList.length} haras referentiels.`;
+      case "utilisateurs":
+        return `${directory.managedUsers.length} utilisateurs.`;
+      default:
+        return "";
+    }
+  })();
+  const selectedExportOption =
+    adminExportOptions.find((option) => option.id === exportType) ??
+    adminExportOptions[0];
+
   const handleExcelExport = () => {
-    const { filename, sheetName, rows } = buildExportRows();
-    downloadXlsx(filename, sheetName, rows);
+    const { filename, sheets } = buildExportWorkbook();
+    downloadXlsxWorkbook(filename, sheets);
     toast.success("Export XLSX genere", {
       description: `${filename} a ete telecharge.`,
     });
@@ -928,12 +1132,12 @@ export default function AdminPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setExportType("juments");
+                    setExportType("base_metier");
                     setIsExcelModalOpen(true);
                   }}
                 >
                   <Download className="h-4 w-4" />
-                  Export juments (XLSX)
+                  Export base metier (XLSX)
                 </Button>
                 <Button
                   variant="outline"
@@ -1101,6 +1305,7 @@ export default function AdminPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value={ALL_HARAS}>Tous les haras</SelectItem>
                         {harasList.map((haras) => (
                           <SelectItem key={haras.id} value={haras.id}>
                             {haras.name}
@@ -1127,7 +1332,9 @@ export default function AdminPage() {
                         <SelectItem value="all">Tout le haras</SelectItem>
                         {selectedHarasCentres.map((centre) => (
                           <SelectItem key={centre.id} value={centre.id}>
-                            {centre.name}
+                            {userDraft.harasId === ALL_HARAS
+                              ? `${getHarasById(centre.harasId)?.shortName ?? centre.harasId} - ${centre.name}`
+                              : centre.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1190,7 +1397,10 @@ export default function AdminPage() {
                                 phone: user.phone,
                                 role: user.role,
                                 status: user.status,
-                                harasId: user.harasIds[0] ?? harasList[0].id,
+                                harasId:
+                                  user.harasIds.length === allHarasIds.length
+                                    ? ALL_HARAS
+                                    : user.harasIds[0] ?? harasList[0].id,
                                 centreId: user.centreIds[0] ?? "all",
                                 notes: user.notes,
                                 createdAt: user.createdAt,
@@ -1586,9 +1796,9 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Tous les exports admin se font au format XLSX. Ouvrez le pop-up pour
-                choisir le type de donnees a exporter (haras, CRE, juments,
-                reproduction, production, utilisateurs).
+                Tous les exports admin se font au format XLSX. Le profil recommande
+                est Base metier prioritaire: reproduction, production et indices de
+                fertilite avec champs essentiels.
               </p>
               <Button onClick={() => setIsExcelModalOpen(true)}>
                 <FileSpreadsheet className="h-4 w-4" />
@@ -1609,64 +1819,127 @@ export default function AdminPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Type de donnees</Label>
-                <Select
-                  value={exportType}
-                  onValueChange={(value) => setExportType(value as AdminExportType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="haras">Haras</SelectItem>
-                    <SelectItem value="cre">CRE</SelectItem>
-                    <SelectItem value="juments">Juments</SelectItem>
-                    <SelectItem value="reproduction">Reproduction</SelectItem>
-                    <SelectItem value="production">Production</SelectItem>
-                    <SelectItem value="utilisateurs">Utilisateurs</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Profil d export</p>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {adminExportOptions.map((option) => {
+                      const selected = exportType === option.id;
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-slate-950">Filtre Haras</p>
-                <div className="flex flex-wrap gap-2">
-                  {harasList.map((haras) => {
-                    const selected = excelSelection.harasIds.includes(haras.id);
-                    return (
-                      <Button
-                        key={haras.id}
-                        type="button"
-                        size="sm"
-                        variant={selected ? "default" : "outline"}
-                        onClick={() => toggleExcelHaras(haras.id)}
-                      >
-                        {haras.shortName}
-                      </Button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setExportType(option.id)}
+                          className={`rounded-2xl border px-4 py-3 text-left transition-colors ${
+                            selected
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-card/60 hover:bg-muted/40"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold text-foreground">
+                            {option.label}
+                            {option.recommended ? (
+                              <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-foreground">
+                                Prioritaire
+                              </span>
+                            ) : null}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {option.description}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-muted/25 p-4">
+                  <p className="section-caption">Resume</p>
+                  <p className="mt-3 text-sm font-semibold text-foreground">
+                    {selectedExportOption.label}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">{exportPreviewText}</p>
+                  <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                    <p>
+                      <span className="font-semibold text-foreground">Haras:</span>{" "}
+                      {exportHarasLabel}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-foreground">CRE:</span>{" "}
+                      {exportCentreLabel}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-slate-950">Filtre CRE</p>
-                <div className="max-h-40 overflow-auto rounded-2xl border border-border p-3">
+              <div className="rounded-2xl border border-border bg-card/60 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">Perimetre export</p>
                   <div className="flex flex-wrap gap-2">
-                    {scopedExportCentres.map((centre) => {
-                      const selected = excelSelection.centreIds.includes(centre.id);
-                      return (
-                        <Button
-                          key={centre.id}
-                          type="button"
-                          size="sm"
-                          variant={selected ? "default" : "outline"}
-                          onClick={() => toggleExcelCentre(centre.id)}
-                        >
-                          {centre.name}
-                        </Button>
-                      );
-                    })}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setExcelSelection({ harasIds: [], centreIds: [] })}
+                    >
+                      Tous les haras
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setExcelSelection({
+                          harasIds: harasList.map((haras) => haras.id),
+                          centreIds: [],
+                        })
+                      }
+                    >
+                      Tout cocher
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Haras</Label>
+                    <div className="flex max-h-36 flex-wrap gap-2 overflow-auto rounded-2xl border border-border p-3">
+                      {harasList.map((haras) => {
+                        const selected = excelSelection.harasIds.includes(haras.id);
+                        return (
+                          <Button
+                            key={haras.id}
+                            type="button"
+                            size="sm"
+                            variant={selected ? "default" : "outline"}
+                            onClick={() => toggleExcelHaras(haras.id)}
+                          >
+                            {haras.shortName}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>CRE</Label>
+                    <div className="flex max-h-36 flex-wrap gap-2 overflow-auto rounded-2xl border border-border p-3">
+                      {scopedExportCentres.map((centre) => {
+                        const selected = excelSelection.centreIds.includes(centre.id);
+                        return (
+                          <Button
+                            key={centre.id}
+                            type="button"
+                            size="sm"
+                            variant={selected ? "default" : "outline"}
+                            onClick={() => toggleExcelCentre(centre.id)}
+                          >
+                            {centre.name}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>

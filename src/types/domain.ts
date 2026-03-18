@@ -103,6 +103,10 @@ export interface ReproductionRecord {
   heatReturn: boolean;
   abortion: boolean;
   embryoResorption: boolean;
+  nonOvulation: boolean;
+  uterineInfection: boolean;
+  twinPregnancy: boolean;
+  traumaticAccident: boolean;
   latestFinding: string;
   observations: string;
   createdAt: string;

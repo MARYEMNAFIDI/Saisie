@@ -8,7 +8,9 @@ import { buildDashboardPath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/components/providers/session-provider";
 
+import { DisplayScaleSwitcher } from "@/components/layout/display-scale-switcher";
 import { SorecLogo } from "@/components/branding/sorec-logo";
+import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { Button } from "@/components/ui/button";
 
 const isActive = (pathname: string, href: string) =>
@@ -28,7 +30,7 @@ export const PlatformTopbar = () => {
   const modeLabel = isAdminRoute ? "Mode haras" : "Mode admin";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-[rgba(238,244,250,0.7)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-[color:var(--topbar-border)] bg-[var(--topbar-bg)] backdrop-blur-xl">
       <div className="container py-4">
         <div className="surface-card flex items-center justify-between gap-4 px-4 py-3 lg:px-5">
           <Link href="/" className="flex shrink-0 items-center">
@@ -41,8 +43,8 @@ export const PlatformTopbar = () => {
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
                 isActive(pathname, "/")
-                  ? "bg-slate-950 text-white"
-                  : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-950",
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground/70 hover:bg-primary/10 hover:text-foreground",
               )}
             >
               Accueil
@@ -53,8 +55,8 @@ export const PlatformTopbar = () => {
                 className={cn(
                   "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
                   pathname.startsWith("/haras/") && !pathname.startsWith("/admin")
-                    ? "bg-slate-950 text-white"
-                    : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-950",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground/70 hover:bg-primary/10 hover:text-foreground",
                 )}
               >
                 Mon espace
@@ -63,6 +65,8 @@ export const PlatformTopbar = () => {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            <DisplayScaleSwitcher />
             {workspaceHref && !isAdminRoute ? (
               <Button
                 asChild

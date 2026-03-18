@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 import {
+  Activity,
   BarChart3,
   Baby,
   ChevronRight,
   Download,
-  FilePenLine,
   Home,
   LogOut,
   MapPinned,
@@ -32,6 +32,7 @@ const isActiveLink = (pathname: string, href: string) =>
 export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
   const params = useParams<{ harasId: string; centreId?: string }>();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { session, can, logout } = useSession();
 
   const harasId = params.harasId;
@@ -53,9 +54,10 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
       ? `/haras/${harasId}/centres/${currentCentre.id}/dashboard`
       : `/haras/${harasId}/dashboard`;
 
+  const activeDataTab = searchParams.get("tab");
+
   const primaryNavItems = [
     { href: dashboardHref, label: "Accueil", icon: Home },
-    { href: buildWorkspacePath(harasId, "juments"), label: "Juments", icon: FilePenLine },
     {
       href: buildWorkspacePath(harasId, "reproduction"),
       label: "Reproduction",
@@ -65,6 +67,11 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
       href: buildWorkspacePath(harasId, "produits"),
       label: "Production",
       icon: Baby,
+    },
+    {
+      href: `${buildWorkspacePath(harasId, "saisies")}?tab=fertilite`,
+      label: "Fertilite",
+      icon: Activity,
     },
   ];
 
@@ -137,7 +144,11 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
                 <nav className="space-y-2">
                   {primaryNavItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = isActiveLink(pathname, item.href);
+                    const isFertilityLink = item.label === "Fertilite";
+                    const isDataPath = pathname === buildWorkspacePath(harasId, "saisies");
+                    const isActive = isFertilityLink
+                      ? isDataPath && activeDataTab === "fertilite"
+                      : isActiveLink(pathname, item.href);
 
                     return (
                       <Link
@@ -169,7 +180,11 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
                   <nav className="mt-3 space-y-2">
                     {secondaryNavItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = isActiveLink(pathname, item.href);
+                      const isDataPath = pathname === buildWorkspacePath(harasId, "saisies");
+                      const isActive =
+                        item.label === "DonnÃ©es"
+                          ? isDataPath && activeDataTab !== "fertilite"
+                          : isActiveLink(pathname, item.href);
 
                       return (
                         <Link
@@ -233,7 +248,11 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
                 <nav className="flex min-w-max gap-2 px-1 pb-1">
                   {primaryNavItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = isActiveLink(pathname, item.href);
+                    const isFertilityLink = item.label === "Fertilite";
+                    const isDataPath = pathname === buildWorkspacePath(harasId, "saisies");
+                    const isActive = isFertilityLink
+                      ? isDataPath && activeDataTab === "fertilite"
+                      : isActiveLink(pathname, item.href);
 
                     return (
                       <Link
@@ -255,7 +274,11 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
               <div className="flex flex-wrap gap-2">
                 {secondaryNavItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = isActiveLink(pathname, item.href);
+                  const isDataPath = pathname === buildWorkspacePath(harasId, "saisies");
+                  const isActive =
+                    item.label === "DonnÃ©es"
+                      ? isDataPath && activeDataTab !== "fertilite"
+                      : isActiveLink(pathname, item.href);
 
                   return (
                     <Link

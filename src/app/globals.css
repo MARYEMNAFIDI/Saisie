@@ -4,26 +4,131 @@
 
 @layer base {
   :root {
-    --background: 214 43% 97%;
-    --foreground: 221 39% 11%;
+    --background: 214 37% 97%;
+    --foreground: 220 45% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 221 39% 11%;
+    --card-foreground: 220 45% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 221 39% 11%;
-    --primary: 221 63% 16%;
+    --popover-foreground: 220 45% 13%;
+    --primary: 219 62% 20%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 215 42% 95%;
-    --secondary-foreground: 221 39% 15%;
-    --muted: 216 34% 94%;
-    --muted-foreground: 217 16% 43%;
-    --accent: 191 93% 42%;
+    --secondary: 38 48% 92%;
+    --secondary-foreground: 221 43% 18%;
+    --muted: 214 26% 93%;
+    --muted-foreground: 218 17% 39%;
+    --accent: 36 58% 46%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 66% 52%;
     --destructive-foreground: 0 0% 98%;
-    --border: 216 30% 87%;
-    --input: 216 30% 87%;
-    --ring: 191 93% 42%;
+    --border: 214 23% 83%;
+    --input: 214 23% 83%;
+    --ring: 36 58% 46%;
     --radius: 1.25rem;
+    --app-scale: 1;
+    --bg-glow-1: rgba(180, 134, 76, 0.17);
+    --bg-glow-2: rgba(15, 39, 76, 0.13);
+    --bg-glow-3: rgba(205, 163, 104, 0.12);
+    --bg-base-1: rgba(247, 246, 243, 0.98);
+    --bg-base-2: rgba(233, 238, 246, 0.96);
+    --surface-border: rgba(166, 143, 112, 0.45);
+    --surface-from: rgba(250, 247, 241, 0.84);
+    --surface-to: rgba(236, 241, 248, 0.82);
+    --surface-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.42),
+      0 24px 54px -34px rgba(27, 45, 78, 0.25);
+    --hero-border: rgba(160, 133, 96, 0.48);
+    --hero-from: rgba(20, 43, 84, 0.9);
+    --hero-to: rgba(161, 120, 62, 0.88);
+    --hero-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.26),
+      0 32px 80px -42px rgba(21, 39, 71, 0.6),
+      0 20px 34px -24px rgba(167, 125, 67, 0.26);
+    --topbar-bg: rgba(244, 241, 235, 0.78);
+    --topbar-border: rgba(168, 143, 110, 0.5);
+  }
+
+  [data-theme="fintech"] {
+    --background: 198 48% 97%;
+    --foreground: 220 38% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 38% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 38% 12%;
+    --primary: 173 85% 28%;
+    --primary-foreground: 160 60% 97%;
+    --secondary: 184 34% 93%;
+    --secondary-foreground: 182 28% 20%;
+    --muted: 192 28% 92%;
+    --muted-foreground: 206 18% 40%;
+    --accent: 198 92% 44%;
+    --accent-foreground: 201 100% 97%;
+    --destructive: 2 72% 54%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 191 24% 82%;
+    --input: 191 24% 82%;
+    --ring: 173 85% 34%;
+    --bg-glow-1: rgba(16, 185, 129, 0.16);
+    --bg-glow-2: rgba(14, 165, 233, 0.16);
+    --bg-glow-3: rgba(2, 132, 199, 0.1);
+    --bg-base-1: rgba(242, 252, 251, 0.96);
+    --bg-base-2: rgba(232, 246, 248, 0.94);
+    --surface-border: rgba(148, 208, 198, 0.5);
+    --surface-from: rgba(236, 250, 247, 0.86);
+    --surface-to: rgba(228, 244, 246, 0.82);
+    --surface-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.42),
+      0 24px 54px -34px rgba(6, 78, 59, 0.28);
+    --hero-border: rgba(148, 208, 198, 0.48);
+    --hero-from: rgba(233, 251, 247, 0.9);
+    --hero-to: rgba(221, 241, 247, 0.84);
+    --hero-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.48),
+      0 28px 70px -38px rgba(5, 150, 105, 0.32),
+      0 18px 34px -22px rgba(3, 105, 161, 0.2);
+    --topbar-bg: rgba(232, 247, 244, 0.8);
+    --topbar-border: rgba(148, 208, 198, 0.54);
+  }
+
+  [data-theme="midnight"] {
+    --background: 224 34% 11%;
+    --foreground: 214 28% 94%;
+    --card: 223 30% 15%;
+    --card-foreground: 214 28% 94%;
+    --popover: 223 30% 15%;
+    --popover-foreground: 214 28% 94%;
+    --primary: 206 86% 58%;
+    --primary-foreground: 224 40% 12%;
+    --secondary: 223 22% 20%;
+    --secondary-foreground: 214 28% 94%;
+    --muted: 224 20% 17%;
+    --muted-foreground: 216 18% 72%;
+    --accent: 215 68% 60%;
+    --accent-foreground: 223 36% 12%;
+    --destructive: 1 86% 64%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 18% 28%;
+    --input: 222 18% 28%;
+    --ring: 206 86% 58%;
+    --bg-glow-1: rgba(59, 130, 246, 0.2);
+    --bg-glow-2: rgba(56, 189, 248, 0.14);
+    --bg-glow-3: rgba(30, 64, 175, 0.14);
+    --bg-base-1: rgba(17, 24, 39, 0.99);
+    --bg-base-2: rgba(13, 18, 33, 0.99);
+    --surface-border: rgba(72, 92, 132, 0.54);
+    --surface-from: rgba(33, 45, 72, 0.84);
+    --surface-to: rgba(20, 30, 53, 0.86);
+    --surface-shadow:
+      inset 0 1px 0 rgba(148, 163, 184, 0.18),
+      0 24px 54px -34px rgba(2, 6, 23, 0.72);
+    --hero-border: rgba(72, 92, 132, 0.56);
+    --hero-from: rgba(31, 45, 74, 0.88);
+    --hero-to: rgba(18, 30, 56, 0.86);
+    --hero-shadow:
+      inset 0 1px 0 rgba(125, 211, 252, 0.18),
+      0 30px 74px -40px rgba(37, 99, 235, 0.34),
+      0 18px 32px -22px rgba(15, 23, 42, 0.5);
+    --topbar-bg: rgba(18, 28, 49, 0.82);
+    --topbar-border: rgba(72, 92, 132, 0.62);
   }
 
   * {
@@ -32,49 +137,44 @@
 
   html {
     scroll-behavior: smooth;
+    font-size: calc(16px * var(--app-scale));
   }
 
   body {
     @apply min-h-screen bg-background font-sans text-foreground antialiased;
     background-image:
-      radial-gradient(circle at 8% 6%, rgba(56, 189, 248, 0.14), transparent 24%),
-      radial-gradient(circle at 88% 10%, rgba(14, 165, 233, 0.12), transparent 18%),
-      radial-gradient(circle at 50% 120%, rgba(15, 23, 42, 0.1), transparent 42%),
-      linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(238, 244, 252, 0.96) 100%);
+      radial-gradient(circle at 8% 6%, var(--bg-glow-1), transparent 24%),
+      radial-gradient(circle at 88% 10%, var(--bg-glow-2), transparent 18%),
+      radial-gradient(circle at 50% 120%, var(--bg-glow-3), transparent 42%),
+      linear-gradient(180deg, var(--bg-base-1) 0%, var(--bg-base-2) 100%);
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-display text-slate-950;
+    @apply font-display text-foreground;
   }
 }
 
 @layer components {
   .hero-panel {
     @apply relative overflow-hidden rounded-[2rem] shadow-panel backdrop-blur-xl;
-    border-color: rgba(203, 213, 225, 0.58);
-    background:
-      linear-gradient(180deg, rgba(241, 245, 249, 0.82) 0%, rgba(232, 240, 248, 0.78) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.44),
-      0 32px 80px -42px rgba(15, 23, 42, 0.5),
-      0 20px 34px -24px rgba(8, 47, 73, 0.18);
+    border-color: var(--hero-border);
+    background: linear-gradient(180deg, var(--hero-from) 0%, var(--hero-to) 100%);
+    box-shadow: var(--hero-shadow);
   }
 
   .surface-card {
     @apply rounded-[1.75rem] shadow-soft backdrop-blur-xl;
-    border-color: rgba(203, 213, 225, 0.62);
-    background:
-      linear-gradient(180deg, rgba(241, 245, 249, 0.8) 0%, rgba(234, 241, 248, 0.76) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.38),
-      0 24px 54px -34px rgba(15, 23, 42, 0.24);
+    border-color: var(--surface-border);
+    background: linear-gradient(180deg, var(--surface-from) 0%, var(--surface-to) 100%);
+    box-shadow: var(--surface-shadow);
   }
 
   .section-caption {
-    @apply text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500;
+    @apply text-[10px] font-semibold uppercase tracking-[0.32em];
+    color: hsl(var(--muted-foreground));
   }
 
   .soft-grid {

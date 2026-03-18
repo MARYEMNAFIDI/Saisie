@@ -1,5 +1,5 @@
 import { getHarasById } from "@/data/haras";
-import { getConfiguredHarasCode, getManagedUserById } from "@/lib/admin-storage";
+import { getManagedUserById } from "@/lib/admin-storage";
 import { AccessRequest, AccessResult } from "@/types/domain";
 
 import { wait } from "@/lib/utils";
@@ -16,20 +16,6 @@ export const verifyAccessRequest = async (
       success: false,
       message: "Le haras cible est introuvable dans le referentiel local.",
     };
-  }
-
-  const expectedCode = (getConfiguredHarasCode(request.harasId) ?? haras.accessCode)
-    .trim()
-    .toUpperCase();
-
-  // Si aucun code n'est fourni (champ supprimé dans l'UI), on ignore la validation du code.
-  if (request.code && expectedCode) {
-    if (request.code.trim().toUpperCase() !== expectedCode) {
-      return {
-        success: false,
-        message: "Identifiants invalides. Verifiez les paramètres de connexion pour ce haras.",
-      };
-    }
   }
 
   const managedUser = request.userId ? getManagedUserById(request.userId) : undefined;
@@ -91,3 +77,4 @@ export const verifyAccessRequest = async (
     },
   };
 };
+

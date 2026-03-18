@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Save } from "lucide-react";
 
 import {
   breedOptions,
   diagnosisOptions,
+  getStallionOptionsForHaras,
   matingTypeOptions,
+  reproductionIncidentOptions,
   seasonOptions,
-  stallionOptions,
 } from "@/data/mockRecords";
 import { MareRecord, ReproductionRecord } from "@/types/domain";
 
@@ -40,7 +41,7 @@ export const createEmptyReproductionDraft = (
   harasId,
   centreId: mare?.centreId ?? "",
   season: mare?.season ?? "2025-2026",
-  stallion: stallionOptions[0],
+  stallion: getStallionOptionsForHaras(harasId)[0] ?? "",
   stallionFarasNumber: "",
   stallionBirthDate: "",
   stallionBreed: breedOptions[0],
@@ -65,6 +66,10 @@ export const createEmptyReproductionDraft = (
   heatReturn: false,
   abortion: false,
   embryoResorption: false,
+  nonOvulation: false,
+  uterineInfection: false,
+  twinPregnancy: false,
+  traumaticAccident: false,
   latestFinding: "",
   observations: "",
 });
@@ -87,6 +92,13 @@ export const ReproductionForm = ({
   }, [initialValue]);
 
   const selectedMare = mareOptions.find((mare) => mare.id === form.mareId);
+  const stallionChoices = useMemo(() => {
+    const scopedOptions = getStallionOptionsForHaras(form.harasId);
+    if (form.stallion && !scopedOptions.includes(form.stallion)) {
+      return [form.stallion, ...scopedOptions];
+    }
+    return scopedOptions;
+  }, [form.harasId, form.stallion]);
 
   return (
     <Card className="border-white/80 bg-white/85">
@@ -150,7 +162,7 @@ export const ReproductionForm = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {stallionOptions.map((stallion) => (
+                  {stallionChoices.map((stallion) => (
                     <SelectItem key={stallion} value={stallion}>
                       {stallion}
                     </SelectItem>
@@ -352,11 +364,7 @@ export const ReproductionForm = ({
 
             <div className="space-y-3">
               <p className="text-sm font-semibold text-slate-950">Incidents a signaler</p>
-              {[
-                { key: "heatReturn", label: "Retour en chaleur" },
-                { key: "abortion", label: "Avortement" },
-                { key: "embryoResorption", label: "Resorption embryonnaire" },
-              ].map((item) => (
+              {reproductionIncidentOptions.map((item) => (
                 <label
                   key={item.key}
                   className="flex items-center justify-between rounded-2xl border border-border bg-white/80 px-4 py-3 text-sm font-medium text-slate-800"

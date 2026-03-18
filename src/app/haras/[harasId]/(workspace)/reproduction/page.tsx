@@ -14,11 +14,13 @@ import {
   CombinedMareReproductionForm,
   createEmptyCombinedEntryDraft,
 } from "@/components/forms/combined-mare-reproduction-form";
-import { FertilityIndices } from "@/components/fertility-indices";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const ESIREMA_REGEX = /^\d{8}[A-Z]$/;
+const normalizeEsirema = (value: string) => value.trim().toUpperCase();
 
 export default function ReproductionPage() {
   const params = useParams<{ harasId: string }>();
@@ -128,6 +130,10 @@ export default function ReproductionPage() {
             heatReturn: activeRecord.heatReturn,
             abortion: activeRecord.abortion,
             embryoResorption: activeRecord.embryoResorption,
+            nonOvulation: activeRecord.nonOvulation ?? false,
+            uterineInfection: activeRecord.uterineInfection ?? false,
+            twinPregnancy: activeRecord.twinPregnancy ?? false,
+            traumaticAccident: activeRecord.traumaticAccident ?? false,
             latestFinding: activeRecord.latestFinding,
             observations: activeRecord.observations,
           },
@@ -170,8 +176,13 @@ export default function ReproductionPage() {
       },
       { valid: Boolean(draft.reproduction.matingType.trim()), label: "Type de saillie" },
       { valid: Boolean(draft.reproduction.firstCycleDate.trim()), label: "Date cycle 1" },
+      { valid: Boolean(draft.reproduction.secondCycleDate.trim()), label: "Date cycle 2" },
+      { valid: Boolean(draft.reproduction.thirdCycleDate.trim()), label: "Date cycle 3" },
+      { valid: Boolean(draft.reproduction.fourthCycleDate.trim()), label: "Date cycle 4" },
       { valid: Boolean(draft.reproduction.diagnosis.trim()), label: "Diagnostic" },
       { valid: Boolean(draft.reproduction.dpsNumber.trim()), label: "N DPS" },
+      { valid: Boolean(draft.reproduction.latestFinding.trim()), label: "Dernier constat" },
+      { valid: Boolean(draft.reproduction.observations.trim()), label: "Observations" },
       {
         valid: Boolean(draft.reproduction.farasEntryStatus.trim()),
         label: "Saisie sur FARAS",
@@ -216,6 +227,22 @@ export default function ReproductionPage() {
       });
     }
 
+    const hasIncidentSelected =
+      draft.reproduction.heatReturn ||
+      draft.reproduction.abortion ||
+      draft.reproduction.embryoResorption ||
+      draft.reproduction.nonOvulation ||
+      draft.reproduction.uterineInfection ||
+      draft.reproduction.twinPregnancy ||
+      draft.reproduction.traumaticAccident;
+
+    if (hasIncidentSelected) {
+      requiredChecks.push({
+        valid: Boolean(draft.reproduction.latestFinding.trim()),
+        label: "Dernier constat incident",
+      });
+    }
+
     const missingLabels = requiredChecks
       .filter((item) => !item.valid)
       .map((item) => item.label);
@@ -229,6 +256,17 @@ export default function ReproductionPage() {
       return;
     }
 
+    const normalizedPreviousProductSirema = normalizeEsirema(
+      draft.reproduction.previousProductSirema,
+    );
+
+    if (!ESIREMA_REGEX.test(normalizedPreviousProductSirema)) {
+      toast.error("Format ESIREMA invalide", {
+        description: "Le N° ESIREMA doit respecter le format 8 chiffres + 1 lettre (ex: 20101307C).",
+      });
+      return;
+    }
+
     const savedMare = upsertMare({
       ...draft.mare,
       harasId,
@@ -238,6 +276,7 @@ export default function ReproductionPage() {
 
     const savedRecord = upsertReproduction({
       ...draft.reproduction,
+      previousProductSirema: normalizedPreviousProductSirema,
       harasId,
       mareId: savedMare.id,
       centreId: savedMare.centreId,
@@ -322,11 +361,6 @@ export default function ReproductionPage() {
           </Card>
         </div>
 
-        <FertilityIndices
-          mares={snapshot.mares}
-          reproductions={snapshot.reproductions}
-          products={snapshot.products}
-        />
       </div>
     </ProtectedPage>
   );

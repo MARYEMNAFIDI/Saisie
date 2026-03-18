@@ -12,10 +12,10 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground shadow-[0_20px_40px_-24px_rgba(15,23,42,0.9)] hover:-translate-y-0.5 hover:bg-primary/94",
         secondary:
-          "border border-slate-200/80 bg-slate-100/80 text-secondary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur hover:bg-slate-100/95",
+          "border border-border bg-secondary/85 text-secondary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur hover:bg-secondary",
         outline:
-          "border border-slate-200/80 bg-slate-100/60 text-foreground backdrop-blur hover:border-slate-300 hover:bg-slate-100/80",
-        ghost: "text-foreground hover:bg-slate-900/5",
+          "border border-border bg-card/70 text-foreground backdrop-blur hover:border-ring/60 hover:bg-muted/80",
+        ghost: "text-foreground hover:bg-muted/70",
         accent:
           "bg-accent text-accent-foreground shadow-[0_18px_36px_-24px_rgba(8,145,178,0.85)] hover:-translate-y-0.5 hover:bg-accent/92",
         danger:

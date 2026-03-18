@@ -15,11 +15,13 @@ import {
 } from "@/components/forms/product-form";
 import { ProtectedPage } from "@/components/access/protected-page";
 import { EmptyState } from "@/components/empty-state";
-import { FertilityIndices } from "@/components/fertility-indices";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const ESIREMA_REGEX = /^\d{8}[A-Z]$/;
+const normalizeEsirema = (value: string) => value.trim().toUpperCase();
 
 export default function ProductPage() {
   const params = useParams<{ harasId: string }>();
@@ -87,6 +89,40 @@ export default function ProductPage() {
       return;
     }
 
+    const requiredChecks: Array<{ valid: boolean; label: string }> = [
+      { valid: Boolean(draft.mareId.trim()), label: "Jument" },
+      { valid: Boolean(draft.birthDate.trim()), label: "Date de naissance" },
+      { valid: Boolean(draft.sex.trim()), label: "Sexe" },
+      { valid: Boolean(draft.declaration.trim()), label: "Declaration" },
+      { valid: Boolean(draft.identification.trim()), label: "Identification" },
+      { valid: Boolean(draft.productStatus.trim()), label: "Statut production" },
+      { valid: Boolean(draft.previousProduct.trim()), label: "Produit precedent" },
+      { valid: Boolean(draft.siremaProduct.trim()), label: "Reference SIREMA" },
+      { valid: Boolean(draft.breed.trim()), label: "Race" },
+      { valid: Boolean(draft.season.trim()), label: "Saison" },
+    ];
+
+    const missingLabels = requiredChecks
+      .filter((item) => !item.valid)
+      .map((item) => item.label);
+
+    if (missingLabels.length > 0) {
+      toast.error("Formulaire incomplet", {
+        description: `Champs requis manquants: ${missingLabels.slice(0, 4).join(", ")}${
+          missingLabels.length > 4 ? "..." : ""
+        }`,
+      });
+      return;
+    }
+
+    const normalizedSirema = normalizeEsirema(draft.siremaProduct);
+    if (!ESIREMA_REGEX.test(normalizedSirema)) {
+      toast.error("Format ESIREMA invalide", {
+        description: "Le N° ESIREMA doit respecter le format 8 chiffres + 1 lettre (ex: 20101307C).",
+      });
+      return;
+    }
+
     const mare = snapshot.mares.find((record) => record.id === draft.mareId);
 
     if (!mare) {
@@ -98,6 +134,7 @@ export default function ProductPage() {
 
     const savedRecord = upsertProduct({
       ...draft,
+      siremaProduct: normalizedSirema,
       harasId,
       centreId: mare.centreId,
       season: draft.season || mare.season,
@@ -179,11 +216,6 @@ export default function ProductPage() {
           </Card>
         </div>
 
-        <FertilityIndices
-          mares={snapshot.mares}
-          reproductions={snapshot.reproductions}
-          products={snapshot.products}
-        />
       </div>
     </ProtectedPage>
   );

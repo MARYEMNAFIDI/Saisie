@@ -50,37 +50,51 @@ export const FertilityIndices = ({
       label: "Indice conception",
       value: conceptionIndex,
       hint: `${confirmedGestations} gestations confirmees / ${reproductions.length} suivis`,
+      formula: "Indice conception = (Gestations confirmees / Suivis reproduction) x 100",
     },
     {
       label: "Indice production",
       value: productionIndex,
       hint: `${products.length} productions / ${reproductions.length} suivis`,
+      formula: "Indice production = (Productions / Suivis reproduction) x 100",
     },
     {
       label: "Indice fertilite globale",
       value: globalFertilityIndex,
       hint: `${maresWithProduction} juments productives / ${mares.length} juments`,
+      formula: "Indice fertilite globale = (Juments productives / Juments suivies) x 100",
     },
   ];
 
   return (
-    <Card>
+    <Card className="mx-auto w-full max-w-6xl">
       <CardHeader>
         <CardTitle>Fertilite</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-3">
+      <CardContent className="space-y-4">
+        <div className="rounded-[1.25rem] border border-border bg-muted/35 p-4">
+          <p className="section-caption">Formules appliquees</p>
+          <div className="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-3">
+            {metrics.map((metric) => (
+              <p key={`formula-${metric.label}`}>{metric.formula}</p>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-[1.25rem] border border-border bg-slate-50/70 p-4"
+            className="rounded-[1.25rem] border border-border bg-card/70 p-4"
           >
             <p className="section-caption">{metric.label}</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">
+            <p className="mt-3 text-3xl font-semibold text-foreground">
               {toPercent(metric.value)}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">{metric.hint}</p>
           </div>
         ))}
+        </div>
       </CardContent>
     </Card>
   );

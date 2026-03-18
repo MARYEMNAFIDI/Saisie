@@ -58,6 +58,39 @@ export default function MareDetailPage() {
       return;
     }
 
+    const requiredChecks: Array<{ valid: boolean; label: string }> = [
+      { valid: Boolean(draft.name.trim()), label: "Nom de la jument" },
+      { valid: Boolean(draft.farasNumber.trim()), label: "Numero FARAS" },
+      { valid: Boolean(draft.centreId.trim()), label: "Centre" },
+      { valid: Boolean(draft.breed.trim()), label: "Race" },
+      { valid: Boolean(draft.owner.trim()), label: "Proprietaire" },
+      { valid: Boolean(draft.commune.trim()), label: "Commune / lieu" },
+      { valid: Boolean(draft.birthDate.trim()), label: "Date de naissance" },
+      { valid: Boolean(draft.physiologicalStatus.trim()), label: "Statut physiologique" },
+      { valid: Boolean(draft.bcs.trim()), label: "BCS" },
+      { valid: Boolean(draft.season.trim()), label: "Saison" },
+    ];
+
+    if (draft.admissionStatus === "refusee") {
+      requiredChecks.push({
+        valid: Boolean(draft.refusalReason.trim()),
+        label: "Motif de refus",
+      });
+    }
+
+    const missingLabels = requiredChecks
+      .filter((item) => !item.valid)
+      .map((item) => item.label);
+
+    if (missingLabels.length > 0) {
+      toast.error("Formulaire incomplet", {
+        description: `Champs requis manquants: ${missingLabels.slice(0, 4).join(", ")}${
+          missingLabels.length > 4 ? "..." : ""
+        }`,
+      });
+      return;
+    }
+
     const savedRecord = upsertMare({
       ...draft,
       harasId,

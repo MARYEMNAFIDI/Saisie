@@ -230,11 +230,12 @@ export const ProductForm = ({
               <Input
                 id="sirema-product"
                 value={form.siremaProduct}
+                placeholder="Ex: 20101307C"
                 disabled={readOnly}
                 onChange={(event) =>
                   setForm((currentValue) => ({
                     ...currentValue,
-                    siremaProduct: event.target.value,
+                    siremaProduct: event.target.value.toUpperCase().replace(/\s+/g, ""),
                   }))
                 }
               />

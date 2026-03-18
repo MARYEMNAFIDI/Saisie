@@ -6,10 +6,11 @@ import { Save } from "lucide-react";
 import {
   breedOptions,
   diagnosisOptions,
+  getStallionOptionsForHaras,
   matingTypeOptions,
   physiologicalStatusOptions,
+  reproductionIncidentOptions,
   seasonOptions,
-  stallionOptions,
 } from "@/data/mockRecords";
 import { Centre } from "@/types/domain";
 
@@ -185,6 +186,24 @@ export const CombinedMareReproductionForm = ({
     () => centres.find((centre) => centre.id === form.mare.centreId),
     [centres, form.mare.centreId],
   );
+  const stallionChoices = useMemo(() => {
+    const scopedOptions = getStallionOptionsForHaras(
+      form.mare.harasId || form.reproduction.harasId,
+    );
+
+    if (
+      form.reproduction.stallion &&
+      !scopedOptions.includes(form.reproduction.stallion)
+    ) {
+      return [form.reproduction.stallion, ...scopedOptions];
+    }
+
+    return scopedOptions;
+  }, [
+    form.mare.harasId,
+    form.reproduction.harasId,
+    form.reproduction.stallion,
+  ]);
 
   return (
     <Card className="mx-auto w-full max-w-6xl border-white/80 bg-white/85">
@@ -460,7 +479,7 @@ export const CombinedMareReproductionForm = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {stallionOptions.map((stallion) => (
+                  {stallionChoices.map((stallion) => (
                     <SelectItem key={stallion} value={stallion}>
                       {stallion}
                     </SelectItem>
@@ -776,13 +795,14 @@ export const CombinedMareReproductionForm = ({
               <Input
                 id="prev-sirema"
                 value={form.reproduction.previousProductSirema}
+                placeholder="Ex: 20101307C"
                 disabled={readOnly}
                 onChange={(event) =>
                   setForm((currentValue) => ({
                     ...currentValue,
                     reproduction: {
                       ...currentValue.reproduction,
-                      previousProductSirema: event.target.value,
+                      previousProductSirema: event.target.value.toUpperCase().replace(/\s+/g, ""),
                     },
                   }))
                 }
@@ -909,22 +929,52 @@ export const CombinedMareReproductionForm = ({
             </div>
           </div>
 
-          <div className="mt-5 space-y-2">
-            <Label htmlFor="repro-observations">Observations</Label>
-            <Textarea
-              id="repro-observations"
-              value={form.reproduction.observations}
-              disabled={readOnly}
-              onChange={(event) =>
-                setForm((currentValue) => ({
-                  ...currentValue,
-                  reproduction: {
-                    ...currentValue.reproduction,
-                    observations: event.target.value,
-                  },
-                }))
-              }
-            />
+          <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
+            <div className="space-y-2">
+              <Label htmlFor="repro-observations">Observations</Label>
+              <Textarea
+                id="repro-observations"
+                value={form.reproduction.observations}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    reproduction: {
+                      ...currentValue.reproduction,
+                      observations: event.target.value,
+                    },
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-foreground">Incidents a signaler</p>
+              {reproductionIncidentOptions.map((item) => (
+                <label
+                  key={item.key}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm font-medium text-foreground"
+                >
+                  <span>{item.label}</span>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(
+                      form.reproduction[item.key as keyof ReproductionDraft],
+                    )}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          [item.key]: event.target.checked,
+                        },
+                      }))
+                    }
+                  />
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 

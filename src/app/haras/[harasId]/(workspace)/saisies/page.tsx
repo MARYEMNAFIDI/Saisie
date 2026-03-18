@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ import { RecordFilters } from "@/types/domain";
 
 import { ProtectedPage } from "@/components/access/protected-page";
 import { FilterToolbar } from "@/components/filters/filter-toolbar";
+import { FertilityIndices } from "@/components/fertility-indices";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ConsultationPage() {
   const params = useParams<{ harasId: string }>();
+  const searchParams = useSearchParams();
   const harasId = params.harasId;
   const haras = getHarasById(harasId);
 
@@ -87,6 +89,14 @@ export default function ConsultationPage() {
   const filteredProducts = snapshot.products.filter((record) =>
     filteredMareIds.has(record.mareId),
   );
+  const requestedTab = searchParams.get("tab");
+  const defaultTab =
+    requestedTab === "reproduction" ||
+    requestedTab === "produits" ||
+    requestedTab === "fertilite" ||
+    requestedTab === "mares"
+      ? requestedTab
+      : "reproduction";
 
   const handleExport = (label: string, payload: unknown) => {
     downloadTextFile(
@@ -133,49 +143,13 @@ export default function ConsultationPage() {
           harasLabel={haras.name}
         />
 
-        <Tabs defaultValue="mares">
+        <Tabs key={defaultTab} defaultValue={defaultTab}>
           <TabsList>
-            <TabsTrigger value="mares">Juments</TabsTrigger>
             <TabsTrigger value="reproduction">Reproduction</TabsTrigger>
             <TabsTrigger value="produits">Production</TabsTrigger>
+            <TabsTrigger value="fertilite">Fertilite</TabsTrigger>
+            <TabsTrigger value="mares">Juments</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="mares">
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Jument</TableHead>
-                      <TableHead>FARAS</TableHead>
-                      <TableHead>Centre</TableHead>
-                      <TableHead>Race</TableHead>
-                      <TableHead>Saison</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMares.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.name}</TableCell>
-                        <TableCell>{record.farasNumber}</TableCell>
-                        <TableCell>{centreNameById[record.centreId]}</TableCell>
-                        <TableCell>{record.breed}</TableCell>
-                        <TableCell>{record.season}</TableCell>
-                        <TableCell>
-                          <Button asChild size="sm" variant="ghost">
-                            <Link href={buildWorkspacePath(harasId, `juments/${record.id}`)}>
-                              Voir
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="reproduction">
             <Card>
@@ -228,6 +202,51 @@ export default function ConsultationPage() {
                         <TableCell>{record.sex}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{record.productStatus}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="fertilite">
+            <FertilityIndices
+              mares={filteredMares}
+              reproductions={filteredReproductions}
+              products={filteredProducts}
+            />
+          </TabsContent>
+
+          <TabsContent value="mares">
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Jument</TableHead>
+                      <TableHead>FARAS</TableHead>
+                      <TableHead>Centre</TableHead>
+                      <TableHead>Race</TableHead>
+                      <TableHead>Saison</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMares.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{record.name}</TableCell>
+                        <TableCell>{record.farasNumber}</TableCell>
+                        <TableCell>{centreNameById[record.centreId]}</TableCell>
+                        <TableCell>{record.breed}</TableCell>
+                        <TableCell>{record.season}</TableCell>
+                        <TableCell>
+                          <Button asChild size="sm" variant="ghost">
+                            <Link href={buildWorkspacePath(harasId, `juments/${record.id}`)}>
+                              Voir
+                            </Link>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
