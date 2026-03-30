@@ -3,9 +3,15 @@
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
 
-import { breedOptions, seasonOptions } from "@/data/mockRecords";
+import {
+  breedOptions,
+  formatProductStatusLabel,
+  productStatusOptions,
+  seasonOptions,
+} from "@/data/mockRecords";
 import { MareRecord, ProductRecord } from "@/types/domain";
 
+import { SelectWithOther } from "@/components/forms/select-with-other";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +24,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const productSexOptions = ["Femelle", "Male"] as const;
+const declarationOptions = ["Declaree", "Non declaree"] as const;
+const identificationOptions = ["Identifie", "En attente"] as const;
+
+const productSexLabels: Record<(typeof productSexOptions)[number], string> = {
+  Femelle: "Femelle",
+  Male: "Mâle",
+};
+
+const declarationLabels: Record<(typeof declarationOptions)[number], string> = {
+  Declaree: "Déclarée",
+  "Non declaree": "Non déclarée",
+};
+
+const identificationLabels: Record<(typeof identificationOptions)[number], string> = {
+  Identifie: "Identifié",
+  "En attente": "En attente",
+};
 
 export type ProductDraft = Omit<
   ProductRecord,
@@ -32,7 +57,7 @@ export const createEmptyProductDraft = (
   mareId: mare?.id ?? "",
   harasId,
   centreId: mare?.centreId ?? "",
-  season: mare?.season ?? "2025-2026",
+  season: mare?.season ?? "2026",
   previousProduct: "",
   siremaProduct: "",
   birthDate: "",
@@ -67,12 +92,12 @@ export const ProductForm = ({
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="section-caption">Production</p>
+            <p className="section-caption">Déclaration de naissance</p>
             <h2 className="mt-2 text-3xl font-semibold text-slate-950">
-              Declarer une production
+              Déclarer une naissance
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              La naissance est saisie separement dans ce formulaire de production.
+              Saisissez ici les informations essentielles de la naissance.
             </p>
           </div>
           <Badge variant={readOnly ? "warning" : "success"}>
@@ -100,7 +125,7 @@ export const ProductForm = ({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selectionner une jument" />
+                  <SelectValue placeholder="Sélectionner une jument" />
                 </SelectTrigger>
                 <SelectContent>
                   {mareOptions.map((mare) => (
@@ -128,88 +153,73 @@ export const ProductForm = ({
             </div>
             <div className="space-y-2">
               <Label>Sexe</Label>
-              <Select
+              <SelectWithOther
                 value={form.sex}
+                options={productSexOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre sexe"
+                renderOptionLabel={(option) =>
+                  productSexLabels[option as (typeof productSexOptions)[number]]
+                }
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
                     sex: value as ProductDraft["sex"],
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Femelle">Femelle</SelectItem>
-                  <SelectItem value="Male">Male</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
-              <Label>Declaration</Label>
-              <Select
+              <Label>Déclaration</Label>
+              <SelectWithOther
                 value={form.declaration}
+                options={declarationOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser une autre déclaration"
+                renderOptionLabel={(option) =>
+                  declarationLabels[option as (typeof declarationOptions)[number]]
+                }
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
                     declaration: value as ProductDraft["declaration"],
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Declaree">Declaree</SelectItem>
-                  <SelectItem value="Non declaree">Non declaree</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label>Identification</Label>
-              <Select
+              <SelectWithOther
                 value={form.identification}
+                options={identificationOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser une autre identification"
+                renderOptionLabel={(option) =>
+                  identificationLabels[option as (typeof identificationOptions)[number]]
+                }
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
                     identification: value as ProductDraft["identification"],
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Identifie">Identifie</SelectItem>
-                  <SelectItem value="En attente">En attente</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
-              <Label>Statut production</Label>
-              <Select
+              <Label>Statut</Label>
+              <SelectWithOther
                 value={form.productStatus}
+                options={productStatusOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre statut"
+                renderOptionLabel={formatProductStatusLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
                     productStatus: value as ProductDraft["productStatus"],
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Declare">Declare</SelectItem>
-                  <SelectItem value="En attente">En attente</SelectItem>
-                  <SelectItem value="A confirmer">A confirmer</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="previous-product">Produit precedent</Label>
@@ -242,24 +252,15 @@ export const ProductForm = ({
             </div>
             <div className="space-y-2">
               <Label>Race</Label>
-              <Select
+              <SelectWithOther
                 value={form.breed}
+                options={breedOptions}
                 disabled={readOnly}
+                otherPlaceholder="Saisir une autre race"
                 onValueChange={(value) =>
                   setForm((currentValue) => ({ ...currentValue, breed: value }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {breedOptions.map((breed) => (
-                    <SelectItem key={breed} value={breed}>
-                      {breed}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label>Saison</Label>
@@ -308,7 +309,7 @@ export const ProductForm = ({
           <div className="flex justify-end">
             <Button onClick={() => onSave(form)}>
               <Save className="h-4 w-4" />
-              Enregistrer la production
+              Enregistrer la déclaration
             </Button>
           </div>
         ) : null}

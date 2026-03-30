@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 import { allCentres, getHarasById, harasList } from "@/data/haras";
+import { formatDiagnosisLabel, isPositiveGestationDiagnosis } from "@/data/mockRecords";
 import { roleConfigs } from "@/data/roles";
 import { downloadTextFile } from "@/lib/storage";
 import { formatDateTime } from "@/lib/utils";
@@ -146,12 +147,6 @@ const adminExportOptions: Array<{
   { id: "utilisateurs", label: "Utilisateurs", description: "Comptes metier et roles." },
 ];
 
-const normalizeText = (value: string) =>
-  value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
 const computeRatio = (numerator: number, denominator: number) =>
   denominator > 0 ? (numerator / denominator) * 100 : 0;
 
@@ -201,16 +196,9 @@ const buildFertilityRows = (
   reproductions: ReproductionRecord[],
   products: ProductRecord[],
 ): XlsxRow[] => {
-  const confirmedGestations = reproductions.filter((record) => {
-    const diagnosis = normalizeText(record.diagnosis);
-    return (
-      diagnosis.includes("gestante") ||
-      diagnosis.includes("confirme") ||
-      diagnosis.includes("positive") ||
-      diagnosis === "pp" ||
-      diagnosis === "mb"
-    );
-  }).length;
+  const confirmedGestations = reproductions.filter((record) =>
+    isPositiveGestationDiagnosis(record.diagnosis),
+  ).length;
 
   const maresWithProduction = new Set(products.map((record) => record.mareId)).size;
 
@@ -342,7 +330,7 @@ const buildExcelHtml = ({
     Etalon: record.stallion,
     Haras: getHarasLabel(record.harasId),
     Centre: getCentreLabel(record.centreId),
-    Diagnostic: record.diagnosis,
+    Diagnostic: formatDiagnosisLabel(record.diagnosis),
     Cycles: record.totalCycles,
     CreePar: record.createdBy ?? "N/A",
     CreeLe: formatDateTime(record.createdAt),
@@ -631,7 +619,7 @@ export default function AdminPage() {
       Race: mare?.breed ?? "",
       AGE: getAgeFromBirthDate(mare?.birthDate ?? ""),
       "Etalon N-1": record.stallion,
-      "Resultat diagnostic": record.diagnosis,
+      "Resultat diagnostic": formatDiagnosisLabel(record.diagnosis),
       "1er Cycle": record.firstCycleDate,
       "2eme Cycle": record.secondCycleDate,
       "3eme cycle": record.thirdCycleDate,
@@ -665,7 +653,7 @@ export default function AdminPage() {
     [exportColumns.saillieNumber]: "Ex: 1",
     Jument: "Exemple Jument",
     [exportColumns.esiremaNumber]: "20101307C",
-    Race: "Barbe",
+    Race: "Arabe barbe",
     AGE: 8,
     "Etalon N-1": "Exemple Etalon",
     "Resultat diagnostic": "PP",
@@ -682,7 +670,7 @@ export default function AdminPage() {
   const productionBaseTemplateRow: XlsxRow = {
     Jument: "Exemple Jument",
     [exportColumns.esiremaNumber]: "20101307C",
-    Race: "Barbe",
+    Race: "Arabe barbe",
     AGE: 8,
     "Date naissance": "2026-03-15",
     Sexe: "Femelle",
@@ -704,7 +692,7 @@ export default function AdminPage() {
     faras: "FARAS-EX-001",
     haras: "Exemple Haras",
     cre: "Exemple CRE",
-    saison: "2025-2026",
+    saison: "2026",
     proprietaire: "Exemple Proprietaire",
     admission: "acceptee",
   };
@@ -1835,7 +1823,7 @@ export default function AdminPage() {
                         <TableRow key={record.id}>
                           <TableCell>{mares.find((mare) => mare.id === record.mareId)?.name}</TableCell>
                           <TableCell>{record.stallion}</TableCell>
-                          <TableCell>{record.diagnosis}</TableCell>
+                          <TableCell>{formatDiagnosisLabel(record.diagnosis)}</TableCell>
                           <TableCell>{record.totalCycles}</TableCell>
                           <TableCell>{record.createdBy ?? "N/A"}</TableCell>
                           <TableCell>{record.updatedBy ?? "N/A"}</TableCell>

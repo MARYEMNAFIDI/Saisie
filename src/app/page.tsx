@@ -1,92 +1,86 @@
 import Link from "next/link";
-import { Building2, FileCheck2, LockKeyhole } from "lucide-react";
 
 import { harasList } from "@/data/haras";
 
 import { HarasCard } from "@/components/haras/haras-card";
-import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
+  const totalCentres = harasList.reduce((sum, haras) => sum + haras.centres.length, 0);
+  const heroStats = [`${harasList.length} haras`, `${totalCentres} centres`, "Accès sécurisé"];
+
   return (
-    <main className="container space-y-8 py-8 lg:space-y-10 lg:py-10">
-      <section className="hero-panel soft-grid p-6 lg:p-8">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div className="space-y-5">
-            <div className="inline-flex rounded-full border border-sky-200/80 bg-white/70 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-slate-700 backdrop-blur">
-              Accès simplifié
-            </div>
-            <div className="space-y-4">
-              <h1 className="max-w-4xl text-4xl font-semibold leading-tight tracking-tight lg:text-6xl">
-                Saisir, vérifier et retrouver les données sans détour.
-              </h1>
-              <p className="max-w-2xl text-base leading-8 text-muted-foreground lg:text-lg">
-                La plateforme est organisée autour de trois actions essentielles:
-                ouvrir un haras, se connecter avec votre mot de passe, puis saisir les juments, la
-                reproduction et les naissances.
+    <main className="pb-12 lg:pb-16">
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[820px]">
+          <video
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src="/haras/5654013-hd_1920_1080_30fps.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-white/70" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.62)_18%,rgba(255,255,255,0.54)_42%,rgba(255,255,255,0.78)_72%,rgba(255,255,255,0.94)_100%)]" />
+          <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-white/96 via-white/80 to-white/0" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-white/0 via-white/88 to-white" />
+        </div>
+
+        <div className="container relative pt-16 lg:pt-24">
+          <div className="relative mx-auto max-w-6xl">
+            <div className="absolute left-1/2 top-0 h-28 w-28 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(193,139,56,0.16),transparent_68%)] blur-3xl" />
+
+            <div className="relative mx-auto flex min-h-[68vh] max-w-5xl flex-col items-center justify-center text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.42em] text-muted-foreground">
+                Portail
               </p>
-              <div className="flex flex-wrap gap-3">
-                <Button asChild>
-                  <Link href="/haras/meknes">Commencer</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="#haras">Choisir un haras</Link>
-                </Button>
+
+              <h1 className="mt-8 max-w-4xl text-5xl font-semibold leading-[0.92] tracking-[-0.05em] text-slate-950 sm:text-6xl lg:text-7xl">
+                <span className="block">Plateforme de gestion</span>
+                <span className="mt-3 block">et de saisie des données</span>
+                <span className="mt-3 block text-[hsl(var(--accent))]">de reproduction</span>
+              </h1>
+
+              <p className="mx-auto mt-10 max-w-3xl text-lg leading-9 text-slate-600 sm:text-xl">
+                Choisissez un haras pour ouvrir la saisie, accéder à vos espaces
+                sécurisés et retrouver rapidement les modules métier essentiels.
+              </p>
+
+              <div className="mt-10 h-px w-28 bg-gradient-to-r from-transparent via-[hsl(var(--accent))] to-transparent opacity-55" />
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[13px] font-semibold uppercase tracking-[0.24em] text-slate-700">
+                {heroStats.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+
+              <div className="mt-12 flex justify-center">
+                <Link
+                  href="#haras"
+                  className="inline-flex min-w-[220px] items-center justify-center rounded-full border border-[hsl(var(--accent))]/35 bg-white/58 px-10 py-4 text-lg font-semibold text-[hsl(var(--accent))] shadow-[0_20px_40px_-30px_rgba(180,134,76,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/82"
+                >
+                  Accéder
+                </Link>
               </div>
             </div>
-          </div>
-
-          <div className="grid gap-4">
-            {[
-              {
-                icon: Building2,
-                title: "1. Choisir un haras",
-                text: "Entrez d'abord dans le haras correspondant a votre travail.",
-              },
-              {
-                icon: LockKeyhole,
-                title: "2. Valider l'accès",
-                text: "Choisissez votre profil puis saisissez votre mot de passe.",
-              },
-              {
-                icon: FileCheck2,
-                title: "3. Faire votre saisie",
-                text: "Les ecrans Juments, Reproduction et Production restent les points d'entree principaux.",
-              },
-            ].map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <div
-                  key={item.title}
-                  className="rounded-[1.5rem] border border-slate-200/80 bg-white/80 p-5 shadow-soft"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-secondary/80 p-3 text-primary">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h2 className="text-xl font-semibold text-slate-950">{item.title}</h2>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.text}</p>
-                </div>
-              );
-            })}
           </div>
         </div>
       </section>
 
-      <section id="haras" className="space-y-4">
-        <div className="space-y-2">
+      <section id="haras" className="container space-y-8 pt-4 lg:pt-8">
+        <div className="mx-auto max-w-3xl space-y-4 text-center">
           <p className="section-caption">Choisir un haras</p>
-          <h2 className="text-3xl font-semibold lg:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-950 lg:text-4xl">
             Ouvrir directement le bon espace
           </h2>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Chaque carte vous emmène vers le haras, puis vers son espace général ou
-            vers l'un de ses centres.
+          <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground">
+            Chaque carte ouvre le haras puis ses espaces de travail, dans une interface
+            plus directe et plus lisible.
           </p>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid gap-6 xl:grid-cols-2">
           {harasList.map((haras) => (
             <HarasCard key={haras.id} haras={haras} />
           ))}

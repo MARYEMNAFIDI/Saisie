@@ -5,6 +5,7 @@ import { Download, FileJson2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 import { getHarasById } from "@/data/haras";
+import { formatDiagnosisLabel } from "@/data/mockRecords";
 import { downloadTextFile } from "@/lib/storage";
 import { formatDateTime } from "@/lib/utils";
 import { useMockDatabase } from "@/components/providers/mock-db-provider";
@@ -152,7 +153,7 @@ export default function ExportsPage() {
                         mareId: record.mareId,
                         etalon: record.stallion,
                         typeSaillie: record.matingType,
-                        diagnostic: record.diagnosis,
+                        diagnostic: formatDiagnosisLabel(record.diagnosis),
                         cycles: record.totalCycles,
                       })),
                     ),

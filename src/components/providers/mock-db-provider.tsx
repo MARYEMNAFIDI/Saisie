@@ -79,6 +79,33 @@ const byUpdatedAt = <T extends { updatedAt: string }>(records: T[]) =>
       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
 
+const normalizeMareRecord = (record: MareRecord): MareRecord => ({
+  ...record,
+  transponderNumber: record.transponderNumber ?? "",
+  coat: record.coat ?? "",
+  stallionPrimary: record.stallionPrimary ?? "",
+  stallionSecondary: record.stallionSecondary ?? "",
+  breedingAddress: record.breedingAddress ?? "",
+  history: record.history ?? "",
+  weightKg: record.weightKg ?? "",
+  vulvaConformation: record.vulvaConformation ?? "",
+});
+
+const normalizeReproductionRecord = (
+  record: ReproductionRecord,
+): ReproductionRecord => ({
+  ...record,
+  fertileCycles: record.fertileCycles ?? 0,
+  nonFertileCycles: record.nonFertileCycles ?? 0,
+  followUpDate: record.followUpDate ?? "",
+  bValue: record.bValue ?? "",
+  leftOvary: record.leftOvary ?? "",
+  rightOvary: record.rightOvary ?? "",
+  uterus: record.uterus ?? "",
+  fluid: record.fluid ?? "",
+  followUpComment: record.followUpComment ?? "",
+});
+
 const getScopedUsers = (
   managedUsers: ManagedUser[],
   harasId: string,
@@ -138,12 +165,14 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
   const { directory } = useAdminProvider();
   const { session } = useSession();
   const [mares, setMares] = useState<MareRecord[]>(() =>
-    initialDatabase.mares.map((record) => withAudit(record, directory.managedUsers)),
+    initialDatabase.mares.map((record) =>
+      withAudit(normalizeMareRecord(record), directory.managedUsers),
+    ),
   );
   const [reproductions, setReproductions] = useState<ReproductionRecord[]>(
     () =>
       initialDatabase.reproductions.map((record) =>
-        withAudit(record, directory.managedUsers),
+        withAudit(normalizeReproductionRecord(record), directory.managedUsers),
       ),
   );
   const [products, setProducts] = useState<ProductRecord[]>(() =>
@@ -156,10 +185,14 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
 
     if (storedVersion !== DB_STORAGE_VERSION) {
       removeLocalStorage(DB_STORAGE_KEY);
-      setMares(initialDatabase.mares.map((record) => withAudit(record, directory.managedUsers)));
+      setMares(
+        initialDatabase.mares.map((record) =>
+          withAudit(normalizeMareRecord(record), directory.managedUsers),
+        ),
+      );
       setReproductions(
         initialDatabase.reproductions.map((record) =>
-          withAudit(record, directory.managedUsers),
+          withAudit(normalizeReproductionRecord(record), directory.managedUsers),
         ),
       );
       setProducts(
@@ -179,12 +212,12 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     if (stored) {
       setMares(
         (stored.mares ?? initialDatabase.mares).map((record) =>
-          withAudit(record, directory.managedUsers),
+          withAudit(normalizeMareRecord(record), directory.managedUsers),
         ),
       );
       setReproductions(
         (stored.reproductions ?? initialDatabase.reproductions).map((record) =>
-          withAudit(record, directory.managedUsers),
+          withAudit(normalizeReproductionRecord(record), directory.managedUsers),
         ),
       );
       setProducts(
@@ -215,7 +248,7 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     const actor =
       session.displayName ?? session.username ?? "admin.sorec";
     const nextRecord: MareRecord = {
-      ...input,
+      ...normalizeMareRecord(input as MareRecord),
       id: input.id ?? buildId("mare"),
       createdAt: existing?.createdAt ?? timestamp,
       updatedAt: timestamp,
@@ -242,7 +275,7 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     const actor =
       session.displayName ?? session.username ?? "admin.sorec";
     const nextRecord: ReproductionRecord = {
-      ...input,
+      ...normalizeReproductionRecord(input as ReproductionRecord),
       id: input.id ?? buildId("repr"),
       createdAt: existing?.createdAt ?? timestamp,
       updatedAt: timestamp,
@@ -292,11 +325,13 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
 
   const resetDatabase = () => {
     setMares(
-      initialDatabase.mares.map((record) => withAudit(record, directory.managedUsers)),
+      initialDatabase.mares.map((record) =>
+        withAudit(normalizeMareRecord(record), directory.managedUsers),
+      ),
     );
     setReproductions(
       initialDatabase.reproductions.map((record) =>
-        withAudit(record, directory.managedUsers),
+        withAudit(normalizeReproductionRecord(record), directory.managedUsers),
       ),
     );
     setProducts(

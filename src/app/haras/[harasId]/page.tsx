@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Building2, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, LockKeyhole } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { getHarasById } from "@/data/haras";
@@ -9,7 +9,6 @@ import { SorecLogo } from "@/components/branding/sorec-logo";
 import { CentreCard } from "@/components/haras/centre-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 export default async function HarasDetailPage({
   params,
@@ -29,7 +28,7 @@ export default async function HarasDetailPage({
         <div
           className={`absolute inset-0 bg-gradient-to-br ${haras.palette.from} ${haras.palette.via} ${haras.palette.to} opacity-[0.97]`}
         />
-        <div className="relative space-y-8 p-6 text-white lg:p-8">
+        <div className="relative space-y-6 p-6 text-white lg:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">
               <Button
@@ -49,80 +48,71 @@ export default async function HarasDetailPage({
             <SorecLogo tone="light" size="sm" />
           </div>
 
-          <div className="max-w-4xl space-y-4">
-            <p className="section-caption text-white/70">Choisir une entree</p>
-            <h1 className="text-4xl font-semibold leading-tight text-white lg:text-5xl">
-              {haras.name}
-            </h1>
-            <p className="max-w-2xl text-base leading-8 text-white/75">
-              Commencez par l'espace haras si vous avez une vue globale. Sinon,
-              ouvrez directement le centre dans lequel vous travaillez.
-            </p>
-          </div>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
+            <div className="space-y-4">
+              <p className="section-caption text-white/65">Accès haras</p>
+              <h1 className="max-w-3xl text-4xl font-semibold leading-tight text-white lg:text-5xl">
+                {haras.name}
+              </h1>
+              <p className="max-w-2xl text-sm leading-7 text-white/78 lg:text-base">
+                Entrez dans la vue globale du haras ou choisissez directement un centre
+                de saisie plus bas.
+              </p>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-white/20 bg-white/10 p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/70">Centres</p>
-                <p className="mt-3 text-3xl font-semibold">{haras.stats.centreCount}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/20 bg-white/10 p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/70">
-                  Formulaires
-                </p>
-                <p className="mt-3 text-3xl font-semibold">{haras.stats.activeForms}</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/20 bg-white/10 p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/70">Relectures</p>
-                <p className="mt-3 text-3xl font-semibold">
-                  {haras.stats.pendingReviews}
-                </p>
+              <div className="flex flex-wrap gap-2">
+                <div className="rounded-full border border-white/16 bg-white/10 px-3 py-1.5 text-sm font-medium text-white/88">
+                  {haras.stats.centreCount} centres
+                </div>
+                <div className="rounded-full border border-white/16 bg-white/10 px-3 py-1.5 text-sm font-medium text-white/88">
+                  Accès sécurisé
+                </div>
               </div>
             </div>
 
-            <Card className="border-white/20 bg-white/10 text-white">
-              <CardContent className="space-y-5 p-5">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-white/10 p-3">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="section-caption text-white/70">Vue generale</p>
-                    <h2 className="text-2xl font-semibold text-white">Espace haras</h2>
-                  </div>
+            <Link
+              href={buildAccessPath(haras.id, "haras")}
+              className="group block rounded-[1.75rem] border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] p-5 text-white shadow-[0_24px_60px_-30px_rgba(15,23,42,0.9)] backdrop-blur-xl transition-transform duration-300 hover:-translate-y-0.5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">
+                    Entrée principale
+                  </p>
+                  <h2 className="text-xl font-semibold text-white">Espace haras</h2>
+                  <p className="text-sm leading-6 text-white/74">
+                    Vue d'ensemble, centres et données du haras.
+                  </p>
                 </div>
-                <p className="text-sm leading-7 text-white/75">
-                  Ouvrez l'espace haras pour suivre l'ensemble des centres, consulter
-                  les donnees et gerer la session.
-                </p>
-                <Button
-                  asChild
-                  variant="secondary"
-                  className="w-full justify-between border-white/80 bg-white text-slate-950 hover:bg-white/95"
-                >
-                  <Link href={buildAccessPath(haras.id, "haras")}>
-                    Ouvrir l'espace haras
-                    <LockKeyhole className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+                <div className="rounded-full border border-white/15 bg-white/10 p-3 text-white/88">
+                  <LockKeyhole className="h-4 w-4" />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t border-white/12 pt-3">
+                <span className="text-xs uppercase tracking-[0.2em] text-white/55">
+                  Vue globale
+                </span>
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-white">
+                  Accéder
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </Link>
           </div>
         </div>
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="section-caption">Choisir un centre</p>
             <h2 className="text-3xl font-semibold text-slate-950">
-              Entrer directement dans le bon centre
+              Entrer dans le bon centre
             </h2>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-white/80 px-4 py-2 text-sm text-muted-foreground md:flex">
-            <Building2 className="h-4 w-4 text-primary" />
-            Choisissez le centre le plus proche de votre saisie.
-          </div>
+          <p className="hidden max-w-sm text-sm text-muted-foreground md:block">
+            Ouvrez directement le centre concerné par votre saisie.
+          </p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">

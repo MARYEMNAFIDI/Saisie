@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { getHarasById } from "@/data/haras";
+import { formatDiagnosisLabel } from "@/data/mockRecords";
 import { useMockDatabase } from "@/components/providers/mock-db-provider";
 import { useSession } from "@/components/providers/session-provider";
 import { ProtectedPage } from "@/components/access/protected-page";
@@ -78,13 +79,21 @@ export default function ReproductionPage() {
                 season: linkedMare.season,
                 name: linkedMare.name,
                 farasNumber: linkedMare.farasNumber,
+                transponderNumber: linkedMare.transponderNumber ?? "",
                 breed: linkedMare.breed,
                 birthDate: linkedMare.birthDate,
+                coat: linkedMare.coat ?? "",
+                stallionPrimary: linkedMare.stallionPrimary ?? "",
+                stallionSecondary: linkedMare.stallionSecondary ?? "",
                 owner: linkedMare.owner,
                 phone: linkedMare.phone,
                 commune: linkedMare.commune,
+                breedingAddress: linkedMare.breedingAddress ?? "",
+                history: linkedMare.history ?? "",
+                weightKg: linkedMare.weightKg ?? "",
                 physiologicalStatus: linkedMare.physiologicalStatus,
                 bcs: linkedMare.bcs,
+                vulvaConformation: linkedMare.vulvaConformation ?? "",
                 admissionStatus: linkedMare.admissionStatus,
                 refusalReason: linkedMare.refusalReason,
               }
@@ -108,6 +117,8 @@ export default function ReproductionPage() {
             thirdCycleDate: activeRecord.thirdCycleDate,
             fourthCycleDate: activeRecord.fourthCycleDate,
             totalCycles: activeRecord.totalCycles,
+            fertileCycles: activeRecord.fertileCycles ?? 0,
+            nonFertileCycles: activeRecord.nonFertileCycles ?? 0,
             cycleResult: activeRecord.cycleResult,
             diagnosis: activeRecord.diagnosis,
             dpsNumber: activeRecord.dpsNumber ?? "",
@@ -134,6 +145,13 @@ export default function ReproductionPage() {
             uterineInfection: activeRecord.uterineInfection ?? false,
             twinPregnancy: activeRecord.twinPregnancy ?? false,
             traumaticAccident: activeRecord.traumaticAccident ?? false,
+            followUpDate: activeRecord.followUpDate ?? "",
+            bValue: activeRecord.bValue ?? "",
+            leftOvary: activeRecord.leftOvary ?? "",
+            rightOvary: activeRecord.rightOvary ?? "",
+            uterus: activeRecord.uterus ?? "",
+            fluid: activeRecord.fluid ?? "",
+            followUpComment: activeRecord.followUpComment ?? "",
             latestFinding: activeRecord.latestFinding,
             observations: activeRecord.observations,
           },
@@ -157,7 +175,6 @@ export default function ReproductionPage() {
       { valid: Boolean(draft.mare.breed.trim()), label: "Race jument" },
       { valid: Boolean(draft.mare.birthDate.trim()), label: "Date naissance jument" },
       { valid: Boolean(draft.mare.owner.trim()), label: "Proprietaire jument" },
-      { valid: Boolean(draft.mare.commune.trim()), label: "Commune detention" },
       { valid: Boolean(draft.mare.physiologicalStatus.trim()), label: "Statut physiologique" },
       { valid: Boolean(draft.mare.bcs.trim()), label: "BCS jument sur 5" },
       { valid: Boolean(draft.reproduction.stallion.trim()), label: "Nom etalon" },
@@ -262,7 +279,8 @@ export default function ReproductionPage() {
 
     if (!ESIREMA_REGEX.test(normalizedPreviousProductSirema)) {
       toast.error("Format ESIREMA invalide", {
-        description: "Le N° ESIREMA doit respecter le format 8 chiffres + 1 lettre (ex: 20101307C).",
+        description:
+          "Le N° ESIREMA doit respecter le format 8 chiffres + 1 lettre (ex: 20101307C).",
       });
       return;
     }
@@ -311,6 +329,7 @@ export default function ReproductionPage() {
           <CombinedMareReproductionForm
             initialValue={initialDraft}
             centres={scopedCentres}
+            harasLabel={haras.name}
             readOnly={!can("edit")}
             onSave={handleSave}
           />
@@ -351,7 +370,7 @@ export default function ReproductionPage() {
                         <Badge variant="outline">{record.totalCycles} cycle(s)</Badge>
                       </div>
                       <p className="mt-3 text-sm text-muted-foreground">
-                        {record.diagnosis}
+                        {formatDiagnosisLabel(record.diagnosis)}
                       </p>
                     </button>
                   );
@@ -360,7 +379,6 @@ export default function ReproductionPage() {
             </CardContent>
           </Card>
         </div>
-
       </div>
     </ProtectedPage>
   );

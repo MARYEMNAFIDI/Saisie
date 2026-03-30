@@ -3,25 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  CheckCircle2,
-  LockKeyhole,
-  Shield,
-  Sparkles,
-  UserCog,
-} from "lucide-react";
+import { CheckCircle2, LockKeyhole, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import { getCentreById, getHarasById } from "@/data/haras";
+import { getHarasById } from "@/data/haras";
 import { defaultRole } from "@/data/roles";
 import { buildDashboardPath } from "@/lib/navigation";
 import { useAdminProvider } from "@/components/providers/admin-provider";
 import { useSession } from "@/components/providers/session-provider";
 import { AccessScope } from "@/types/domain";
 
-import { SorecLogo } from "@/components/branding/sorec-logo";
 import { RoleBadge } from "@/components/role-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +53,6 @@ export const AccessGate = ({
   } | null>(null);
 
   const haras = getHarasById(harasId);
-  const centre = centreId ? getCentreById(centreId) : undefined;
 
   const authorizedUsers = useMemo(
     () => getUsersForScope(harasId, scope === "centre" ? centreId : undefined),
@@ -85,13 +76,6 @@ export const AccessGate = ({
 
   const selectedUser = authorizedUsers.find((user) => user.id === selectedUserId);
   const selectedRole = selectedUser?.role ?? defaultRole;
-
-  const alreadyAuthorized =
-    session.status === "granted" &&
-    session.harasId === harasId &&
-    (scope === "haras" ||
-      session.scope === "haras" ||
-      session.centreId === centreId);
 
   if (!haras) {
     return (
@@ -140,87 +124,8 @@ export const AccessGate = ({
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-      <Card className="relative overflow-hidden border-white/80 bg-white/80">
-        <div
-          className={`absolute inset-0 bg-gradient-to-br ${haras.palette.from} ${haras.palette.via} ${haras.palette.to} opacity-[0.97]`}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_35%)]" />
-        <CardContent className="relative flex h-full flex-col justify-between p-8 text-white">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <SorecLogo tone="light" size="sm" />
-              <Badge className="border-white/20 bg-white/10 text-white">
-                Acces protege
-              </Badge>
-            </div>
-
-            <div className="space-y-4">
-              <p className="section-caption text-white/70">Mode d'emploi</p>
-              <h1 className="text-4xl font-semibold leading-tight text-white lg:text-5xl">
-                {scope === "haras" ? haras.name : centre?.name}
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-white/75 lg:text-base">
-                L'entree a ete simplifiee: choisissez votre nom, saisissez votre
-                mot de passe, puis ouvrez directement l'espace
-                correspondant.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  icon: UserCog,
-                  title: "1. Votre profil",
-                  text: "Choisissez votre nom dans la liste.",
-                },
-                {
-                  icon: LockKeyhole,
-                  title: "2. Le mot de passe",
-                  text: "Saisissez le mot de passe de votre profil.",
-                },
-                {
-                  icon: Shield,
-                  title: "3. Validation",
-                  text: "Ouvrez votre espace si les identifiants sont corrects.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div
-                    key={item.title}
-                    className="rounded-[1.5rem] border border-white/20 bg-white/10 p-5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5" />
-                      <p className="text-sm font-semibold">{item.title}</p>
-                    </div>
-                    <p className="mt-3 text-sm text-white/75">{item.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            {alreadyAuthorized ? (
-              <Button asChild variant="secondary">
-                <Link href={targetPath}>Entrer directement</Link>
-              </Button>
-            ) : null}
-            <Button
-              asChild
-              variant="outline"
-              className="border-white/25 bg-white/10 text-white hover:bg-white/15"
-            >
-              <Link href={`/haras/${harasId}`}>Retour au haras</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-white/80 bg-white/90">
+    <div className="flex justify-center py-4 lg:py-8">
+      <Card className="w-full max-w-[760px] border-white/80 bg-white/90">
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -238,7 +143,7 @@ export const AccessGate = ({
               <Label htmlFor="managed-user">Votre nom</Label>
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger id="managed-user">
-                  <SelectValue placeholder="Selectionner votre profil" />
+                  <SelectValue placeholder="Sélectionner votre profil" />
                 </SelectTrigger>
                 <SelectContent>
                   {authorizedUsers.map((user) => (

@@ -39,6 +39,7 @@ export default function MareDetailPage() {
 
   const initialDraft: MareDraft = record
     ? (({ id, createdAt, updatedAt, createdBy, updatedBy, ...rest }) => ({
+        ...createEmptyMareDraft(harasId, record.centreId),
         id,
         ...rest,
       }))(record)
@@ -64,7 +65,6 @@ export default function MareDetailPage() {
       { valid: Boolean(draft.centreId.trim()), label: "Centre" },
       { valid: Boolean(draft.breed.trim()), label: "Race" },
       { valid: Boolean(draft.owner.trim()), label: "Proprietaire" },
-      { valid: Boolean(draft.commune.trim()), label: "Commune / lieu" },
       { valid: Boolean(draft.birthDate.trim()), label: "Date de naissance" },
       { valid: Boolean(draft.physiologicalStatus.trim()), label: "Statut physiologique" },
       { valid: Boolean(draft.bcs.trim()), label: "BCS" },

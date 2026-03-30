@@ -55,7 +55,7 @@ export default function ProductPage() {
         <EmptyState
           icon={Plus}
           title="Aucune jument disponible"
-          description="Ajoutez d'abord une fiche jument sur ce perimetre avant de declarer une production."
+          description="Ajoutez d'abord une fiche jument sur ce perimetre avant de faire une declaration de naissance."
         />
       </ProtectedPage>
     );
@@ -95,7 +95,7 @@ export default function ProductPage() {
       { valid: Boolean(draft.sex.trim()), label: "Sexe" },
       { valid: Boolean(draft.declaration.trim()), label: "Declaration" },
       { valid: Boolean(draft.identification.trim()), label: "Identification" },
-      { valid: Boolean(draft.productStatus.trim()), label: "Statut production" },
+      { valid: Boolean(draft.productStatus.trim()), label: "Statut" },
       { valid: Boolean(draft.previousProduct.trim()), label: "Produit precedent" },
       { valid: Boolean(draft.siremaProduct.trim()), label: "Reference SIREMA" },
       { valid: Boolean(draft.breed.trim()), label: "Race" },
@@ -127,7 +127,7 @@ export default function ProductPage() {
 
     if (!mare) {
       toast.error("Selection incomplete", {
-        description: "Selectionnez une jument avant d'enregistrer la production.",
+        description: "Selectionnez une jument avant d'enregistrer la declaration.",
       });
       return;
     }
@@ -142,8 +142,8 @@ export default function ProductPage() {
     });
 
     setActiveId(savedRecord.id);
-    toast.success("Production enregistree", {
-      description: `La production liee a ${mare.name} a ete enregistree localement.`,
+    toast.success("Declaration enregistree", {
+      description: `La naissance liee a ${mare.name} a ete enregistree localement.`,
     });
   };
 
@@ -151,16 +151,16 @@ export default function ProductPage() {
     <ProtectedPage harasId={harasId}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Formulaire production"
-          title="Production"
-          description="La naissance reste geree a part dans cet ecran de production."
+          eyebrow="Naissance"
+          title="Déclaration de naissance"
+          description="Saisissez et retrouvez ici les déclarations de naissance."
           actions={
             <Button
               disabled={!can("edit")}
               onClick={() => setActiveId("new")}
             >
               <Plus className="h-4 w-4" />
-              Nouvelle production
+              Nouvelle déclaration
             </Button>
           }
         />
@@ -175,12 +175,12 @@ export default function ProductPage() {
 
           <Card className="mx-auto w-full max-w-6xl">
             <CardHeader>
-              <CardTitle>Historique production</CardTitle>
+              <CardTitle>Historique des déclarations</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {snapshot.products.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Aucune production enregistree sur ce perimetre.
+                  Aucune déclaration de naissance enregistrée sur ce périmètre.
                 </p>
               ) : (
                 snapshot.products.map((record) => {

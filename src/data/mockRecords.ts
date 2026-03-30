@@ -1,13 +1,13 @@
 import { MareRecord, ProductRecord, ReproductionRecord } from "@/types/domain";
 
-export const seasonOptions = ["2024-2025", "2025-2026", "2026-2027"];
+export const seasonOptions = ["2026"];
 
 export const breedOptions = [
-  "Barbe",
-  "Arabe-Barbe",
+  "Arabe barbe",
+  "Pur-sang anglais",
   "Pur-sang arabe",
-  "Cheval de selle",
-  "Muletiere",
+  "Anglo-arabe",
+  "Selle étrangère",
 ];
 
 export const physiologicalStatusOptions = [
@@ -18,15 +18,86 @@ export const physiologicalStatusOptions = [
   "Maiden",
 ];
 
+export const physiologicalStatusLabels = {
+  Vide: "Vide",
+  AV: "AV",
+  Suitee: "Suitée",
+  Repos: "Repos",
+  Maiden: "Maiden",
+} as const;
+
 export const matingTypeOptions = [
   "Monte naturelle",
   "Insemination artificielle fraiche",
   "Insemination artificielle refrigeree",
 ];
 
-export const diagnosisOptions = ["AV", "PP", "SR", "V", "MB", "RE"];
+export const matingTypeLabels = {
+  "Monte naturelle": "Monte naturelle",
+  "Insemination artificielle fraiche": "Insémination artificielle fraîche",
+  "Insemination artificielle refrigeree": "Insémination artificielle réfrigérée",
+} as const;
+
+export const diagnosisLabels = {
+  AV: "Avortement",
+  PP: "Présumée pleine",
+  PPP: "Présumée pleine privée",
+  SR: "Saillie répétée",
+  V: "Vide",
+  MB: "Mort-basse",
+  RE: "Résorption embryonnaire",
+} as const;
+
+export const diagnosisOptions = Object.keys(diagnosisLabels) as Array<
+  keyof typeof diagnosisLabels
+>;
+
+const normalizeDiagnosisText = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+export const normalizeDiagnosisCode = (diagnosis: string) =>
+  diagnosis.trim().toUpperCase() as keyof typeof diagnosisLabels;
+
+export const isPositiveGestationDiagnosis = (diagnosis: string) => {
+  const normalizedDiagnosis = normalizeDiagnosisText(diagnosis);
+  return (
+    normalizedDiagnosis.includes("gestante") ||
+    normalizedDiagnosis.includes("confirme") ||
+    normalizedDiagnosis.includes("positive") ||
+    normalizedDiagnosis.includes("presumee pleine") ||
+    normalizedDiagnosis.includes("pleine presumee") ||
+    normalizedDiagnosis === "pp" ||
+    normalizedDiagnosis === "ppp" ||
+    normalizedDiagnosis === "mb"
+  );
+};
+
+export const getDiagnosisLabel = (diagnosis: string) => {
+  const normalizedDiagnosis = normalizeDiagnosisCode(diagnosis);
+  return diagnosisLabels[normalizedDiagnosis] ?? diagnosis;
+};
+
+export const formatDiagnosisLabel = (diagnosis: string) => {
+  const normalizedDiagnosis = normalizeDiagnosisCode(diagnosis);
+  if (!normalizedDiagnosis) {
+    return "";
+  }
+
+  const label = diagnosisLabels[normalizedDiagnosis];
+  return label ? `${normalizedDiagnosis} - ${label}` : diagnosis;
+};
 
 export const productStatusOptions = ["Declare", "En attente", "A confirmer"];
+
+export const productStatusLabels = {
+  Declare: "Déclaré",
+  "En attente": "En attente",
+  "A confirmer": "À confirmer",
+} as const;
 
 export const reproductionIncidentOptions = [
   { key: "heatReturn", label: "Retour en chaleur" },
@@ -88,6 +159,18 @@ export const getStallionOptionsForHaras = (harasId?: string) => {
 };
 
 export const stallionOptions = getStallionOptionsForHaras();
+
+export const formatPhysiologicalStatusLabel = (status: string) =>
+  physiologicalStatusLabels[status as keyof typeof physiologicalStatusLabels] ?? status;
+
+export const formatMatingTypeLabel = (matingType: string) =>
+  matingTypeLabels[matingType as keyof typeof matingTypeLabels] ?? matingType;
+
+export const formatProductStatusLabel = (status: string) =>
+  productStatusLabels[status as keyof typeof productStatusLabels] ?? status;
+
+export const formatStallionChoiceLabel = (stallion: string) =>
+  stallion.replaceAll("Semence congelee", "Semence congelée");
 
 export const initialMareRecords: MareRecord[] = [];
 

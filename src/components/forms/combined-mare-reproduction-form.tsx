@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Save } from "lucide-react";
+import { Download, Save } from "lucide-react";
 
 import {
   breedOptions,
   diagnosisOptions,
+  formatDiagnosisLabel,
+  formatMatingTypeLabel,
+  formatPhysiologicalStatusLabel,
+  formatStallionChoiceLabel,
   getStallionOptionsForHaras,
+  isPositiveGestationDiagnosis,
   matingTypeOptions,
   physiologicalStatusOptions,
   reproductionIncidentOptions,
@@ -16,9 +21,14 @@ import { Centre } from "@/types/domain";
 
 import { createEmptyMareDraft, MareDraft } from "@/components/forms/mare-form";
 import {
+  downloadMareDigitalSheet,
+  MareDigitalSheetFollowUpRow,
+} from "@/components/forms/mare-digital-sheet";
+import {
   createEmptyReproductionDraft,
   ReproductionDraft,
 } from "@/components/forms/reproduction-form";
+import { SelectWithOther } from "@/components/forms/select-with-other";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +54,49 @@ const stallionCategoryOptions = [
   "Semence etrangere",
 ] as const;
 
+const stallionCategoryLabels: Record<(typeof stallionCategoryOptions)[number], string> = {
+  "National (SOREC)": "National (SOREC)",
+  Prive: "Privé",
+  "Semence etrangere": "Semence étrangère",
+};
+
+const admissionStatusOptions = ["acceptee", "refusee"] as const;
+const admissionStatusLabels: Record<(typeof admissionStatusOptions)[number], string> = {
+  acceptee: "Acceptée",
+  refusee: "Refusée",
+};
+
+const coatOptions = ["PS", "AA", "Ar", "ArBr", "Br"] as const;
+const yesNoOptions = ["OUI", "NON"] as const;
+const productSexOptions = ["Femelle", "Male"] as const;
+const productSexLabels: Record<(typeof productSexOptions)[number], string> = {
+  Femelle: "Femelle",
+  Male: "Mâle",
+};
+
+const getAgeFromBirthDate = (birthDate: string) => {
+  if (!birthDate) {
+    return "";
+  }
+
+  const date = new Date(birthDate);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const hasNotHadBirthday =
+    today.getMonth() < date.getMonth() ||
+    (today.getMonth() === date.getMonth() && today.getDate() < date.getDate());
+
+  if (hasNotHadBirthday) {
+    age -= 1;
+  }
+
+  return age >= 0 ? String(age) : "";
+};
+
 const inferEnteredCycleCount = (reproduction: ReproductionDraft) =>
   [
     reproduction.firstCycleDate,
@@ -53,8 +106,7 @@ const inferEnteredCycleCount = (reproduction: ReproductionDraft) =>
   ].filter((value) => value && value.trim().length > 0).length;
 
 const resolveResultCycle = (reproduction: ReproductionDraft) => {
-  const diagnosisCode = reproduction.diagnosis.trim().toUpperCase();
-  if (diagnosisCode !== "PP") {
+  if (!isPositiveGestationDiagnosis(reproduction.diagnosis)) {
     return null;
   }
 
@@ -118,11 +170,13 @@ export const createEmptyCombinedEntryDraft = (
 export const CombinedMareReproductionForm = ({
   initialValue,
   centres,
+  harasLabel,
   readOnly,
   onSave,
 }: {
   initialValue: CombinedEntryDraft;
   centres: Centre[];
+  harasLabel: string;
   readOnly: boolean;
   onSave: (draft: CombinedEntryDraft) => void;
 }) => {
@@ -204,6 +258,18 @@ export const CombinedMareReproductionForm = ({
     form.reproduction.harasId,
     form.reproduction.stallion,
   ]);
+  const followUpRows: MareDigitalSheetFollowUpRow[] = [
+    {
+      date: form.reproduction.followUpDate || form.reproduction.firstCycleDate,
+      b: form.reproduction.bValue,
+      og: form.reproduction.leftOvary,
+      od: form.reproduction.rightOvary,
+      matrice: form.reproduction.uterus,
+      liquide: form.reproduction.fluid,
+      commentaire:
+        form.reproduction.followUpComment || form.reproduction.latestFinding,
+    },
+  ];
 
   return (
     <Card className="mx-auto w-full max-w-6xl border-white/80 bg-white/85">
@@ -218,9 +284,27 @@ export const CombinedMareReproductionForm = ({
               Formulaire automatique complet pour la fiche jument et le bilan reproduction.
             </p>
           </div>
-          <Badge variant={readOnly ? "warning" : "success"}>
-            {readOnly ? "Lecture seule" : "Edition active"}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800"
+              onClick={() =>
+                downloadMareDigitalSheet({
+                  form: form.mare,
+                  centres,
+                  harasLabel,
+                  followUpRows,
+                })
+              }
+            >
+              <Download className="h-4 w-4 text-emerald-600" />
+              Telecharger fiche de suivie jument
+            </Button>
+            <Badge variant={readOnly ? "warning" : "success"}>
+              {readOnly ? "Lecture seule" : "Edition active"}
+            </Badge>
+          </div>
         </div>
 
         <div className="rounded-[1.5rem] border border-border bg-slate-50/70 p-5">
@@ -258,6 +342,23 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="mare-transponder">N° Transpondeur</Label>
+              <Input
+                id="mare-transponder"
+                value={form.mare.transponderNumber}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: {
+                      ...currentValue.mare,
+                      transponderNumber: event.target.value,
+                    },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Centre</Label>
               <Select
                 value={form.mare.centreId}
@@ -270,7 +371,7 @@ export const CombinedMareReproductionForm = ({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selectionner un centre" />
+                  <SelectValue placeholder="Sélectionner un centre" />
                 </SelectTrigger>
                 <SelectContent>
                   {centres.map((centre) => (
@@ -280,6 +381,60 @@ export const CombinedMareReproductionForm = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Race</Label>
+              <SelectWithOther
+                value={form.mare.breed}
+                options={breedOptions}
+                disabled={readOnly}
+                otherPlaceholder="Saisir une autre race"
+                onValueChange={(value) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: { ...currentValue.mare, breed: value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mare-birth-date">Date naissance jument</Label>
+              <Input
+                id="mare-birth-date"
+                type="date"
+                value={form.mare.birthDate}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: { ...currentValue.mare, birthDate: event.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mare-age">Age</Label>
+              <Input
+                id="mare-age"
+                value={getAgeFromBirthDate(form.mare.birthDate)}
+                disabled
+                placeholder="Calcule automatiquement"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Robe</Label>
+              <SelectWithOther
+                value={form.mare.coat}
+                options={coatOptions}
+                disabled={readOnly}
+                otherPlaceholder="Préciser une autre robe"
+                onValueChange={(value) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: { ...currentValue.mare, coat: value },
+                  }))
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label>Saison</Label>
@@ -306,46 +461,7 @@ export const CombinedMareReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Race</Label>
-              <Select
-                value={form.mare.breed}
-                disabled={readOnly}
-                onValueChange={(value) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    mare: { ...currentValue.mare, breed: value },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {breedOptions.map((breed) => (
-                    <SelectItem key={breed} value={breed}>
-                      {breed}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mare-birth-date">Date naissance jument</Label>
-              <Input
-                id="mare-birth-date"
-                type="date"
-                value={form.mare.birthDate}
-                disabled={readOnly}
-                onChange={(event) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    mare: { ...currentValue.mare, birthDate: event.target.value },
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mare-bcs">BCS jument / 5</Label>
+              <Label htmlFor="mare-bcs">Note BCS</Label>
               <Input
                 id="mare-bcs"
                 value={form.mare.bcs}
@@ -360,9 +476,14 @@ export const CombinedMareReproductionForm = ({
             </div>
             <div className="space-y-2">
               <Label>Admission</Label>
-              <Select
+              <SelectWithOther
                 value={form.mare.admissionStatus}
+                options={admissionStatusOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre statut d'admission"
+                renderOptionLabel={(option) =>
+                  admissionStatusLabels[option as (typeof admissionStatusOptions)[number]]
+                }
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -372,18 +493,10 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="acceptee">Acceptee</SelectItem>
-                  <SelectItem value="refusee">Refusee</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mare-owner">Proprietaire</Label>
+              <Label htmlFor="mare-owner">Proprietaire - nom et prenom</Label>
               <Input
                 id="mare-owner"
                 value={form.mare.owner}
@@ -397,62 +510,158 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mare-commune">Commune</Label>
+              <Label htmlFor="mare-phone">Telephone</Label>
               <Input
-                id="mare-commune"
-                value={form.mare.commune}
+                id="mare-phone"
+                value={form.mare.phone}
                 disabled={readOnly}
                 onChange={(event) =>
                   setForm((currentValue) => ({
                     ...currentValue,
-                    mare: { ...currentValue.mare, commune: event.target.value },
+                    mare: { ...currentValue.mare, phone: event.target.value },
                   }))
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label>Statut physiologique</Label>
-              <Select
-                value={form.mare.physiologicalStatus}
-                disabled={readOnly}
-                onValueChange={(value) =>
-                  setForm((currentValue) => ({
-                    ...currentValue,
-                    mare: { ...currentValue.mare, physiologicalStatus: value },
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {physiologicalStatusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {form.mare.admissionStatus === "refusee" ? (
-            <div className="mt-5 space-y-2">
-              <Label htmlFor="mare-refusal">Motif de refus</Label>
-              <Textarea
-                id="mare-refusal"
-                value={form.mare.refusalReason}
+            <div className="space-y-2 lg:col-span-2">
+              <Label htmlFor="mare-breeding-address">Adresse de l'elevage</Label>
+              <Input
+                id="mare-breeding-address"
+                value={form.mare.breedingAddress}
                 disabled={readOnly}
                 onChange={(event) =>
                   setForm((currentValue) => ({
                     ...currentValue,
                     mare: {
                       ...currentValue.mare,
-                      refusalReason: event.target.value,
+                      breedingAddress: event.target.value,
                     },
                   }))
                 }
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Statut</Label>
+              <SelectWithOther
+                value={form.mare.physiologicalStatus}
+                options={physiologicalStatusOptions}
+                disabled={readOnly}
+                otherPlaceholder="Préciser un autre statut physiologique"
+                renderOptionLabel={formatPhysiologicalStatusLabel}
+                onValueChange={(value) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: { ...currentValue.mare, physiologicalStatus: value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mare-weight">Poids (Kg)</Label>
+              <Input
+                id="mare-weight"
+                type="number"
+                min={0}
+                value={form.mare.weightKg}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: { ...currentValue.mare, weightKg: event.target.value },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mare-stallion-primary">Etalon I</Label>
+              <Input
+                id="mare-stallion-primary"
+                value={form.mare.stallionPrimary}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: {
+                      ...currentValue.mare,
+                      stallionPrimary: event.target.value,
+                    },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mare-stallion-secondary">Etalon II</Label>
+              <Input
+                id="mare-stallion-secondary"
+                value={form.mare.stallionSecondary}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: {
+                      ...currentValue.mare,
+                      stallionSecondary: event.target.value,
+                    },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2 lg:col-span-2">
+              <Label htmlFor="mare-vulva">Conformation de la vulve</Label>
+              <Input
+                id="mare-vulva"
+                value={form.mare.vulvaConformation}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: {
+                      ...currentValue.mare,
+                      vulvaConformation: event.target.value,
+                    },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2 lg:col-span-2">
+              <Label htmlFor="mare-history">Historique</Label>
+              <Textarea
+                id="mare-history"
+                value={form.mare.history}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    mare: { ...currentValue.mare, history: event.target.value },
+                  }))
+                }
+              />
+            </div>
+          </div>
+
+          {form.mare.admissionStatus === "refusee" ? (
+            <div className="mt-5 rounded-[1.25rem] border border-rose-200 bg-rose-50/80 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="mare-refusal">Motif de refus</Label>
+                <p className="text-sm text-rose-700">
+                  Si la jument est refusee, saisissez ici le motif du refus.
+                </p>
+                <Textarea
+                  id="mare-refusal"
+                  value={form.mare.refusalReason}
+                  disabled={readOnly}
+                  onChange={(event) =>
+                    setForm((currentValue) => ({
+                      ...currentValue,
+                      mare: {
+                        ...currentValue.mare,
+                        refusalReason: event.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="Ex: age non conforme, etat sanitaire, dossier incomplet..."
+                />
+              </div>
             </div>
           ) : null}
         </div>
@@ -461,10 +670,13 @@ export const CombinedMareReproductionForm = ({
           <p className="section-caption">Bloc reproduction</p>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label>Etalon</Label>
-              <Select
+              <Label>Étalon</Label>
+              <SelectWithOther
                 value={form.reproduction.stallion}
+                options={stallionChoices}
                 disabled={readOnly}
+                otherPlaceholder="Saisir un autre étalon"
+                renderOptionLabel={formatStallionChoiceLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -474,18 +686,7 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {stallionChoices.map((stallion) => (
-                    <SelectItem key={stallion} value={stallion}>
-                      {stallion}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="stallion-faras">N FARAS de l etalon</Label>
@@ -524,9 +725,11 @@ export const CombinedMareReproductionForm = ({
             </div>
             <div className="space-y-2">
               <Label>Race de l etalon</Label>
-              <Select
+              <SelectWithOther
                 value={form.reproduction.stallionBreed}
+                options={breedOptions}
                 disabled={readOnly}
+                otherPlaceholder="Saisir une autre race d'étalon"
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -536,24 +739,18 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {breedOptions.map((breed) => (
-                    <SelectItem key={breed} value={breed}>
-                      {breed}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label>Categorie etalon</Label>
-              <Select
+              <SelectWithOther
                 value={form.reproduction.stallionCategory}
+                options={stallionCategoryOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser une autre catégorie d'étalon"
+                renderOptionLabel={(option) =>
+                  stallionCategoryLabels[option as (typeof stallionCategoryOptions)[number]]
+                }
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -563,24 +760,16 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {stallionCategoryOptions.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label>Type de saillie</Label>
-              <Select
+              <SelectWithOther
                 value={form.reproduction.matingType}
+                options={matingTypeOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre type de saillie"
+                renderOptionLabel={formatMatingTypeLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -590,18 +779,7 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {matingTypeOptions.map((matingType) => (
-                    <SelectItem key={matingType} value={matingType}>
-                      {matingType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cycle-1">Date cycle 1</Label>
@@ -687,10 +865,53 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Diagnostic</Label>
-              <Select
-                value={form.reproduction.diagnosis}
+              <Label htmlFor="fertile-cycles">Cycles fécondés</Label>
+              <Input
+                id="fertile-cycles"
+                type="number"
+                min={0}
+                step={1}
+                value={form.reproduction.fertileCycles}
                 disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    reproduction: {
+                      ...currentValue.reproduction,
+                      fertileCycles: Number(event.target.value || 0),
+                    },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="non-fertile-cycles">Cycles non fécondés</Label>
+              <Input
+                id="non-fertile-cycles"
+                type="number"
+                min={0}
+                step={1}
+                value={form.reproduction.nonFertileCycles}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    reproduction: {
+                      ...currentValue.reproduction,
+                      nonFertileCycles: Number(event.target.value || 0),
+                    },
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Diagnostic</Label>
+              <SelectWithOther
+                value={form.reproduction.diagnosis}
+                options={diagnosisOptions}
+                disabled={readOnly}
+                otherPlaceholder="Préciser un autre diagnostic"
+                renderOptionLabel={formatDiagnosisLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -700,18 +921,7 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {diagnosisOptions.map((diagnosis) => (
-                    <SelectItem key={diagnosis} value={diagnosis}>
-                      {diagnosis}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dps-number">N DPS</Label>
@@ -732,9 +942,11 @@ export const CombinedMareReproductionForm = ({
             </div>
             <div className="space-y-2">
               <Label>Saisie sur FARAS</Label>
-              <Select
+              <SelectWithOther
                 value={form.reproduction.farasEntryStatus}
+                options={yesNoOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser une autre valeur FARAS"
                 onValueChange={(value) =>
                   setForm((currentValue) => ({
                     ...currentValue,
@@ -744,15 +956,7 @@ export const CombinedMareReproductionForm = ({
                     },
                   }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OUI">OUI</SelectItem>
-                  <SelectItem value="NON">NON</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="latest-finding">Dernier constat</Label>
@@ -770,6 +974,136 @@ export const CombinedMareReproductionForm = ({
                   }))
                 }
               />
+            </div>
+            <div className="space-y-4 lg:col-span-2">
+              <div>
+                <p className="section-caption">Tableau de suivi</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Renseignez la ligne de suivi clinique associee a cette saisie.
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="space-y-2">
+                  <Label htmlFor="follow-up-date">Date</Label>
+                  <Input
+                    id="follow-up-date"
+                    type="date"
+                    value={form.reproduction.followUpDate}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          followUpDate: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="follow-up-b">B</Label>
+                  <Input
+                    id="follow-up-b"
+                    value={form.reproduction.bValue}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          bValue: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="follow-up-og">OG</Label>
+                  <Input
+                    id="follow-up-og"
+                    value={form.reproduction.leftOvary}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          leftOvary: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="follow-up-od">OD</Label>
+                  <Input
+                    id="follow-up-od"
+                    value={form.reproduction.rightOvary}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          rightOvary: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="follow-up-uterus">Matrice</Label>
+                  <Input
+                    id="follow-up-uterus"
+                    value={form.reproduction.uterus}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          uterus: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="follow-up-fluid">Liquide</Label>
+                  <Input
+                    id="follow-up-fluid"
+                    value={form.reproduction.fluid}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          fluid: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2 xl:col-span-2">
+                  <Label htmlFor="follow-up-comment">Commentaire</Label>
+                  <Textarea
+                    id="follow-up-comment"
+                    value={form.reproduction.followUpComment}
+                    disabled={readOnly}
+                    onChange={(event) =>
+                      setForm((currentValue) => ({
+                        ...currentValue,
+                        reproduction: {
+                          ...currentValue.reproduction,
+                          followUpComment: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+              </div>
             </div>
             {form.reproduction.farasEntryStatus === "NON" ? (
               <div className="space-y-2 lg:col-span-2">
@@ -845,8 +1179,8 @@ export const CombinedMareReproductionForm = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Femelle">Femelle</SelectItem>
-                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Femelle">{productSexLabels.Femelle}</SelectItem>
+                  <SelectItem value="Male">{productSexLabels.Male}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

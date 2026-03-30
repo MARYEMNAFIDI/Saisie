@@ -6,6 +6,9 @@ import { Save } from "lucide-react";
 import {
   breedOptions,
   diagnosisOptions,
+  formatDiagnosisLabel,
+  formatMatingTypeLabel,
+  formatStallionChoiceLabel,
   getStallionOptionsForHaras,
   matingTypeOptions,
   reproductionIncidentOptions,
@@ -16,6 +19,7 @@ import { MareRecord, ReproductionRecord } from "@/types/domain";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SelectWithOther } from "@/components/forms/select-with-other";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,7 +44,7 @@ export const createEmptyReproductionDraft = (
   mareId: mare?.id ?? "",
   harasId,
   centreId: mare?.centreId ?? "",
-  season: mare?.season ?? "2025-2026",
+  season: mare?.season ?? "2026",
   stallion: getStallionOptionsForHaras(harasId)[0] ?? "",
   stallionFarasNumber: "",
   stallionBirthDate: "",
@@ -52,6 +56,8 @@ export const createEmptyReproductionDraft = (
   thirdCycleDate: "",
   fourthCycleDate: "",
   totalCycles: 1,
+  fertileCycles: 0,
+  nonFertileCycles: 0,
   cycleResult: "",
   diagnosis: diagnosisOptions[0],
   dpsNumber: "",
@@ -70,6 +76,13 @@ export const createEmptyReproductionDraft = (
   uterineInfection: false,
   twinPregnancy: false,
   traumaticAccident: false,
+  followUpDate: "",
+  bValue: "",
+  leftOvary: "",
+  rightOvary: "",
+  uterus: "",
+  fluid: "",
+  followUpComment: "",
   latestFinding: "",
   observations: "",
 });
@@ -150,46 +163,30 @@ export const ReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Etalon</Label>
-              <Select
+              <Label>Étalon</Label>
+              <SelectWithOther
                 value={form.stallion}
+                options={stallionChoices}
                 disabled={readOnly}
+                otherPlaceholder="Saisir un autre étalon"
+                renderOptionLabel={formatStallionChoiceLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({ ...currentValue, stallion: value }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {stallionChoices.map((stallion) => (
-                    <SelectItem key={stallion} value={stallion}>
-                      {stallion}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label>Type de saillie</Label>
-              <Select
+              <SelectWithOther
                 value={form.matingType}
+                options={matingTypeOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre type de saillie"
+                renderOptionLabel={formatMatingTypeLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({ ...currentValue, matingType: value }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {matingTypeOptions.map((matingType) => (
-                    <SelectItem key={matingType} value={matingType}>
-                      {matingType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="firstCycleDate">Date du cycle</Label>
@@ -208,24 +205,16 @@ export const ReproductionForm = ({
             </div>
             <div className="space-y-2">
               <Label>Diagnostic</Label>
-              <Select
+              <SelectWithOther
                 value={form.diagnosis}
+                options={diagnosisOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre diagnostic"
+                renderOptionLabel={formatDiagnosisLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) => ({ ...currentValue, diagnosis: value }))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {diagnosisOptions.map((diagnosis) => (
-                    <SelectItem key={diagnosis} value={diagnosis}>
-                      {diagnosis}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="latest-finding">Dernier constat</Label>
@@ -247,13 +236,9 @@ export const ReproductionForm = ({
         {selectedMare ? (
           <div className="rounded-[1.5rem] border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
             <p className="section-caption">Jument sélectionnée</p>
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <p>
                 <span className="font-semibold text-slate-950">Nom:</span> {selectedMare.name}
-              </p>
-              <p>
-                <span className="font-semibold text-slate-950">Commune:</span>{" "}
-                {selectedMare.commune}
               </p>
               <p>
                 <span className="font-semibold text-slate-950">Saison:</span>{" "}
@@ -326,6 +311,40 @@ export const ReproductionForm = ({
                   setForm((currentValue) => ({
                     ...currentValue,
                     totalCycles: Number(event.target.value),
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fertile-cycles">Cycles fécondés</Label>
+              <Input
+                id="fertile-cycles"
+                type="number"
+                min={0}
+                step={1}
+                value={form.fertileCycles}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    fertileCycles: Number(event.target.value || 0),
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="non-fertile-cycles">Cycles non fécondés</Label>
+              <Input
+                id="non-fertile-cycles"
+                type="number"
+                min={0}
+                step={1}
+                value={form.nonFertileCycles}
+                disabled={readOnly}
+                onChange={(event) =>
+                  setForm((currentValue) => ({
+                    ...currentValue,
+                    nonFertileCycles: Number(event.target.value || 0),
                   }))
                 }
               />

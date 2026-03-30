@@ -7,6 +7,7 @@ import { Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { getHarasById } from "@/data/haras";
+import { formatDiagnosisLabel } from "@/data/mockRecords";
 import { buildWorkspacePath } from "@/lib/navigation";
 import { downloadTextFile } from "@/lib/storage";
 import { getRoleCapabilities } from "@/lib/permissions";
@@ -146,8 +147,8 @@ export default function ConsultationPage() {
         <Tabs key={defaultTab} defaultValue={defaultTab}>
           <TabsList>
             <TabsTrigger value="reproduction">Reproduction</TabsTrigger>
-            <TabsTrigger value="produits">Production</TabsTrigger>
-            <TabsTrigger value="fertilite">Fertilite</TabsTrigger>
+            <TabsTrigger value="produits">Déclaration de naissance</TabsTrigger>
+            <TabsTrigger value="fertilite">Fertilité</TabsTrigger>
             <TabsTrigger value="mares">Juments</TabsTrigger>
           </TabsList>
 
@@ -170,7 +171,7 @@ export default function ConsultationPage() {
                         <TableCell>{mareNameById[record.mareId]}</TableCell>
                         <TableCell>{record.stallion}</TableCell>
                         <TableCell>{record.totalCycles}</TableCell>
-                        <TableCell>{record.diagnosis}</TableCell>
+                        <TableCell>{formatDiagnosisLabel(record.diagnosis)}</TableCell>
                         <TableCell>{record.latestFinding}</TableCell>
                       </TableRow>
                     ))}

@@ -5,6 +5,7 @@ import { Save } from "lucide-react";
 
 import {
   breedOptions,
+  formatPhysiologicalStatusLabel,
   physiologicalStatusOptions,
   seasonOptions,
 } from "@/data/mockRecords";
@@ -13,6 +14,8 @@ import { Centre, MareRecord } from "@/types/domain";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { MareDigitalSheet } from "@/components/forms/mare-digital-sheet";
+import { SelectWithOther } from "@/components/forms/select-with-other";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+
+const admissionStatusOptions = ["acceptee", "refusee"] as const;
+const admissionStatusLabels: Record<(typeof admissionStatusOptions)[number], string> = {
+  acceptee: "Acceptée",
+  refusee: "Refusée",
+};
 
 export type MareDraft = Omit<
   MareRecord,
@@ -36,16 +45,24 @@ export const createEmptyMareDraft = (
 ): MareDraft => ({
   harasId,
   centreId: centreId ?? "",
-  season: "2025-2026",
+  season: "2026",
   name: "",
   farasNumber: "",
+  transponderNumber: "",
   breed: breedOptions[0],
   birthDate: "",
+  coat: "",
+  stallionPrimary: "",
+  stallionSecondary: "",
   owner: "",
   phone: "",
   commune: "",
+  breedingAddress: "",
+  history: "",
+  weightKg: "",
   physiologicalStatus: physiologicalStatusOptions[0],
   bcs: "",
+  vulvaConformation: "",
   admissionStatus: "acceptee",
   refusalReason: "",
 });
@@ -149,24 +166,15 @@ export const MareForm = ({
             </div>
             <div className="space-y-2">
               <Label>Race</Label>
-              <Select
+              <SelectWithOther
                 value={form.breed}
+                options={breedOptions}
                 disabled={readOnly}
+                otherPlaceholder="Saisir une autre race"
                 onValueChange={(value) =>
                   setForm((currentValue) => updateField(currentValue, "breed", value))
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {breedOptions.map((breed) => (
-                    <SelectItem key={breed} value={breed}>
-                      {breed}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="owner">Propriétaire</Label>
@@ -182,23 +190,15 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="commune">Commune / lieu</Label>
-              <Input
-                id="commune"
-                value={form.commune}
-                disabled={readOnly}
-                onChange={(event) =>
-                  setForm((currentValue) =>
-                    updateField(currentValue, "commune", event.target.value),
-                  )
-                }
-              />
-            </div>
-            <div className="space-y-2">
               <Label>Admission</Label>
-              <Select
+              <SelectWithOther
                 value={form.admissionStatus}
+                options={admissionStatusOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre statut d'admission"
+                renderOptionLabel={(option) =>
+                  admissionStatusLabels[option as (typeof admissionStatusOptions)[number]]
+                }
                 onValueChange={(value) =>
                   setForm((currentValue) =>
                     updateField(
@@ -208,32 +208,29 @@ export const MareForm = ({
                     ),
                   )
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="acceptee">Acceptee</SelectItem>
-                  <SelectItem value="refusee">Refusee</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
 
           {form.admissionStatus === "refusee" ? (
-            <div className="mt-5 space-y-2">
-              <Label htmlFor="refusal-reason">Motif de refus</Label>
-              <Textarea
-                id="refusal-reason"
-                value={form.refusalReason}
-                disabled={readOnly}
-                onChange={(event) =>
-                  setForm((currentValue) =>
-                    updateField(currentValue, "refusalReason", event.target.value),
-                  )
-                }
-                placeholder="Précisez la raison du refus"
-              />
+            <div className="mt-5 rounded-[1.25rem] border border-rose-200 bg-rose-50/80 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="refusal-reason">Motif de refus</Label>
+                <p className="text-sm text-rose-700">
+                  Si la jument est refusee, indiquez ici la raison du refus.
+                </p>
+                <Textarea
+                  id="refusal-reason"
+                  value={form.refusalReason}
+                  disabled={readOnly}
+                  onChange={(event) =>
+                    setForm((currentValue) =>
+                      updateField(currentValue, "refusalReason", event.target.value),
+                    )
+                  }
+                  placeholder="Ex: age non conforme, etat sanitaire, dossier incomplet..."
+                />
+              </div>
             </div>
           ) : null}
         </div>
@@ -259,26 +256,18 @@ export const MareForm = ({
             </div>
             <div className="space-y-2">
               <Label>Statut physiologique</Label>
-              <Select
+              <SelectWithOther
                 value={form.physiologicalStatus}
+                options={physiologicalStatusOptions}
                 disabled={readOnly}
+                otherPlaceholder="Préciser un autre statut physiologique"
+                renderOptionLabel={formatPhysiologicalStatusLabel}
                 onValueChange={(value) =>
                   setForm((currentValue) =>
                     updateField(currentValue, "physiologicalStatus", value),
                   )
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {physiologicalStatusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bcs">BCS</Label>
@@ -333,6 +322,12 @@ export const MareForm = ({
             </p>
           </div>
         </div>
+
+        <MareDigitalSheet
+          form={form}
+          centres={centres}
+          harasLabel={harasLabel}
+        />
 
         {!readOnly ? (
           <div className="flex justify-end">
