@@ -51,6 +51,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     window.localStorage.setItem(SCALE_STORAGE_KEY, scale);
     document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.classList.toggle("dark", theme === "midnight");
     document.documentElement.style.colorScheme =
       theme === "midnight" ? "dark" : "light";
     document.documentElement.style.setProperty("--app-scale", scaleFactorMap[scale]);

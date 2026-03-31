@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Manrope, Sora } from "next/font/google";
 
-import { AppProviders } from "@/components/providers/app-providers";
+import { BackToTopButton } from "@/components/layout/back-to-top-button";
 import { PlatformTopbar } from "@/components/layout/platform-topbar";
+import { AppProviders } from "@/components/providers/app-providers";
 
 import "./globals.css";
 
@@ -20,7 +21,7 @@ const display = Sora({
 export const metadata: Metadata = {
   title: "Plateforme de Saisie Reproduction Equine",
   description:
-    "Prototype front-end Next.js pour la saisie métier des données de reproduction équine, structuré par haras et centres.",
+    "Prototype front-end Next.js pour la saisie metier des donnees de reproduction equine, structure par haras et centres.",
 };
 
 export default function RootLayout({
@@ -32,8 +33,17 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <body className={`${sans.variable} ${display.variable}`}>
         <AppProviders>
-          <PlatformTopbar />
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <PlatformTopbar />
+            <div className="flex-1">{children}</div>
+            <BackToTopButton />
+            <footer className="border-t border-[color:var(--topbar-border)] bg-[var(--topbar-bg)]">
+              <div className="container py-5 text-center text-sm text-foreground/70">
+                &copy; 2026 SOREC - Societe Royale d&apos;Encouragement du Cheval.
+                Tous droits reserves. | Plateforme de Saisie
+              </div>
+            </footer>
+          </div>
         </AppProviders>
       </body>
     </html>

@@ -7,20 +7,17 @@ import {
   BarChart3,
   Download,
   Home,
-  MapPinned,
-  ShieldCheck,
+  Search,
   TableProperties,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { getCentreById, getHarasById } from "@/data/haras";
 import { buildAccessPath, buildWorkspacePath } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
 import { useSession } from "@/components/providers/session-provider";
 
 import { Sidebar, type SidebarItem } from "@/components/dashboard/sidebar";
-import { SorecLogo } from "@/components/branding/sorec-logo";
-import { RoleBadge } from "@/components/role-badge";
-import { Badge } from "@/components/ui/badge";
 
 const isActiveLink = (pathname: string, href: string) =>
   href.endsWith("/dashboard") ? pathname === href : pathname.startsWith(href);
@@ -51,52 +48,118 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
       : `/haras/${harasId}/dashboard`;
 
   const activeDataTab = searchParams.get("tab");
+  const isCentreWorkspace = Boolean(currentCentre);
+  const maresHref = buildWorkspacePath(harasId, "juments");
+  const reproductionHref = buildWorkspacePath(harasId, "reproduction");
+  const productsHref = buildWorkspacePath(harasId, "produits");
+  const dataHref = buildWorkspacePath(harasId, "saisies");
+  const fertilityHref = `${dataHref}?tab=fertilite`;
+  const exportsHref = buildWorkspacePath(harasId, "exports");
 
-  const primaryNavItems: SidebarItem[] = [
-    {
-      href: dashboardHref,
-      label: "Accueil",
-      icon: Home,
-      active: pathname === dashboardHref,
-    },
-    {
-      href: buildWorkspacePath(harasId, "reproduction"),
-      label: "Reproduction",
-      icon: BarChart3,
-      active: isActiveLink(pathname, buildWorkspacePath(harasId, "reproduction")),
-    },
-    {
-      href: buildWorkspacePath(harasId, "produits"),
-      label: "Déclaration de naissance",
-      icon: "horseBirth",
-      active: isActiveLink(pathname, buildWorkspacePath(harasId, "produits")),
-    },
-    {
-      href: `${buildWorkspacePath(harasId, "saisies")}?tab=fertilite`,
-      label: "Fertilité",
-      icon: Activity,
-      active:
-        pathname === buildWorkspacePath(harasId, "saisies") &&
-        activeDataTab === "fertilite",
-    },
-  ];
+  const primaryNavItems: SidebarItem[] = isCentreWorkspace
+    ? [
+        {
+          href: dashboardHref,
+          label: "Accueil CRE",
+          description: "Vue simple des actions du jour",
+          icon: Home,
+          active: pathname === dashboardHref,
+        },
+        {
+          href: maresHref,
+          label: "1. Trouver une jument",
+          description: "Rechercher ou relire une fiche",
+          icon: Search,
+          active: isActiveLink(pathname, maresHref),
+        },
+        {
+          href: reproductionHref,
+          label: "2. Saisir la reproduction",
+          description: "Enregistrer la saillie et le suivi",
+          icon: BarChart3,
+          active: isActiveLink(pathname, reproductionHref),
+        },
+        {
+          href: productsHref,
+          label: "3. Declarer une naissance",
+          description: "Ajouter le produit et son statut",
+          icon: "horseBirth",
+          active: isActiveLink(pathname, productsHref),
+        },
+        {
+          href: dataHref,
+          label: "4. Verifier les donnees",
+          description: "Controler avant validation",
+          icon: TableProperties,
+          active: pathname === dataHref && activeDataTab !== "fertilite",
+        },
+      ]
+    : [
+        {
+          href: dashboardHref,
+          label: "Accueil",
+          description: "Vue d'ensemble du haras",
+          icon: Home,
+          active: pathname === dashboardHref,
+        },
+        {
+          href: maresHref,
+          label: "Juments",
+          description: "Base de fiches du perimetre",
+          icon: Search,
+          active: isActiveLink(pathname, maresHref),
+        },
+        {
+          href: reproductionHref,
+          label: "Reproduction",
+          description: "Saisies et suivis",
+          icon: BarChart3,
+          active: isActiveLink(pathname, reproductionHref),
+        },
+        {
+          href: productsHref,
+          label: "Naissances",
+          description: "Declarations de produits",
+          icon: "horseBirth",
+          active: isActiveLink(pathname, productsHref),
+        },
+      ];
 
   const secondaryNavItems: SidebarItem[] = [
-    {
-      href: buildWorkspacePath(harasId, "saisies"),
-      label: "Données",
-      icon: TableProperties,
-      active:
-        pathname === buildWorkspacePath(harasId, "saisies") &&
-        activeDataTab !== "fertilite",
-    },
+    ...(isCentreWorkspace
+      ? [
+          {
+            href: fertilityHref,
+            label: "Indicateurs",
+            description: "Fertilite et lecture globale",
+            icon: Activity,
+            active: pathname === dataHref && activeDataTab === "fertilite",
+          },
+        ]
+      : [
+          {
+            href: dataHref,
+            label: "Donnees",
+            description: "Vue consolidee",
+            icon: TableProperties,
+            active: pathname === dataHref && activeDataTab !== "fertilite",
+          },
+          {
+            href: fertilityHref,
+            label: "Fertilite",
+            description: "Indices de campagne",
+            icon: Activity,
+            active: pathname === dataHref && activeDataTab === "fertilite",
+          },
+        ]),
     ...(can("export")
       ? [
           {
-            href: buildWorkspacePath(harasId, "exports"),
+            href: exportsHref,
             label: "Exports",
+            description: "Telechargements metier",
             icon: Download,
-            active: isActiveLink(pathname, buildWorkspacePath(harasId, "exports")),
+            active: isActiveLink(pathname, exportsHref),
           },
         ]
       : []),
@@ -110,78 +173,55 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
 
   const handleLogout = () => {
     logout();
-    toast.message("Session effacée", {
-      description: "Le périmètre d'accès simulé a été réinitialisé côté front.",
+    toast.message("Session effacee", {
+      description: "Le perimetre d'acces simule a ete reinitialise cote front.",
     });
   };
 
   const scopeLabel = currentCentre ? currentCentre.name : haras.name;
+  const statusLabel = currentCentre ? currentCentre.status : haras.stats.status;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB]">
+    <div className="min-h-screen">
       <div className="container py-4 lg:py-6">
-        <div className="grid gap-6 lg:grid-cols-[96px_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="relative hidden lg:block">
             <Sidebar
-              title={haras.shortName}
-              subtitle={scopeLabel}
+              title={isCentreWorkspace ? "Espace CRE" : haras.shortName}
+              subtitle={
+                isCentreWorkspace ? `${scopeLabel} | ${haras.shortName}` : scopeLabel
+              }
               primaryItems={primaryNavItems}
               secondaryItems={secondaryNavItems}
               settingsHref={accessLink}
               onLogout={handleLogout}
+              coverImage={haras.coverImage}
+              statusLabel={
+                !isCentreWorkspace && typeof statusLabel === "string"
+                  ? statusLabel
+                  : undefined
+              }
+              roleLabel={!isCentreWorkspace ? session.role : undefined}
             />
           </aside>
 
-          <main className="space-y-6">
-            <div className="rounded-[1.75rem] border border-white/70 bg-white/82 p-5 shadow-[0_24px_50px_-34px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <SorecLogo size="sm" />
-                  <p className="section-caption">Workspace</p>
-                </div>
-                <RoleBadge role={session.role} />
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {[...primaryNavItems, ...secondaryNavItems].map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      item.active
-                        ? "bg-slate-950 text-white"
-                        : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-950"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
+          <main className="space-y-4">
+            <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+              {[...primaryNavItems, ...secondaryNavItems].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
+                    item.active
+                      ? "border border-amber-200 bg-amber-50 text-amber-950 dark:border-sky-400/30 dark:bg-sky-400/12 dark:text-sky-100"
+                      : "border border-slate-200 bg-white/85 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/78 dark:text-slate-300 dark:hover:bg-slate-900",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
-
-            <div className="rounded-[1.75rem] border border-white/70 bg-white/82 p-5 shadow-[0_24px_50px_-34px_rgba(15,23,42,0.12)] backdrop-blur">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-center gap-3 text-sm text-slate-500">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                    <MapPinned className="h-4 w-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                      Périmètre actif
-                    </p>
-                    <p className="font-medium text-slate-950">{scopeLabel}</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="info" className="gap-2">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    {session.role}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
             {children}
           </main>
         </div>

@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { getHarasById } from "@/data/haras";
+import { buildWorkspacePath } from "@/lib/navigation";
 import { useMockDatabase } from "@/components/providers/mock-db-provider";
 import { useSession } from "@/components/providers/session-provider";
 import {
@@ -118,7 +120,8 @@ export default function ProductPage() {
     const normalizedSirema = normalizeEsirema(draft.siremaProduct);
     if (!ESIREMA_REGEX.test(normalizedSirema)) {
       toast.error("Format ESIREMA invalide", {
-        description: "Le N° ESIREMA doit respecter le format 8 chiffres + 1 lettre (ex: 20101307C).",
+        description:
+          "Le N ESIREMA doit respecter le format 8 chiffres + 1 lettre (ex: 20101307C).",
       });
       return;
     }
@@ -151,17 +154,25 @@ export default function ProductPage() {
     <ProtectedPage harasId={harasId}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Naissance"
-          title="Déclaration de naissance"
-          description="Saisissez et retrouvez ici les déclarations de naissance."
+          eyebrow="Parcours CRE"
+          title="3. Declarer une naissance"
+          description="Ajoutez ici le produit, sa reference et son statut. Cette etape vient apres la saisie reproduction."
           actions={
-            <Button
-              disabled={!can("edit")}
-              onClick={() => setActiveId("new")}
-            >
-              <Plus className="h-4 w-4" />
-              Nouvelle déclaration
-            </Button>
+            <>
+              <Button
+                variant="accent"
+                disabled={!can("edit")}
+                onClick={() => setActiveId("new")}
+              >
+                <Plus className="h-4 w-4" />
+                Nouvelle declaration
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={buildWorkspacePath(harasId, "saisies")}>
+                  Etape suivante: verification
+                </Link>
+              </Button>
+            </>
           }
         />
 
@@ -175,12 +186,12 @@ export default function ProductPage() {
 
           <Card className="mx-auto w-full max-w-6xl">
             <CardHeader>
-              <CardTitle>Historique des déclarations</CardTitle>
+              <CardTitle>Declarations deja enregistrees</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {snapshot.products.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Aucune déclaration de naissance enregistrée sur ce périmètre.
+                  Aucune declaration de naissance enregistree sur ce perimetre.
                 </p>
               ) : (
                 snapshot.products.map((record) => {
@@ -215,7 +226,6 @@ export default function ProductPage() {
             </CardContent>
           </Card>
         </div>
-
       </div>
     </ProtectedPage>
   );

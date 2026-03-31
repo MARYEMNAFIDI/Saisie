@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   AlertTriangle,
+  ArrowUpRight,
   ClipboardCheck,
   FileSpreadsheet,
   FolderOutput,
@@ -21,11 +22,11 @@ import { formatDateTime } from "@/lib/utils";
 import { useMockDatabase } from "@/components/providers/mock-db-provider";
 import { useSession } from "@/components/providers/session-provider";
 
+import { ProtectedPage } from "@/components/access/protected-page";
 import { DetailPanel } from "@/components/dashboard/detail-panel";
 import { HeaderFilters } from "@/components/dashboard/header-filters";
 import { SectionGroup } from "@/components/dashboard/section-group";
 import { DashboardItem } from "@/components/dashboard/types";
-import { ProtectedPage } from "@/components/access/protected-page";
 import { Button } from "@/components/ui/button";
 
 export default function HarasDashboardPage() {
@@ -47,22 +48,86 @@ export default function HarasDashboardPage() {
   const visibleCentres = scopedCentreId
     ? haras.centres.filter((centre) => centre.id === scopedCentreId)
     : haras.centres;
-
   const alertCentres = visibleCentres.filter(
     (centre) => centre.pendingReviews >= 4 || centre.status !== "synchronise",
   );
+  const dataHref = buildWorkspacePath(harasId, "saisies");
+  const exportHref = buildWorkspacePath(harasId, "exports");
+  const totalVisibleRows =
+    snapshot.mares.length + snapshot.reproductions.length + snapshot.products.length;
+  const totalPendingReviews = visibleCentres.reduce(
+    (sum, centre) => sum + centre.pendingReviews,
+    0,
+  );
+
+  const heroMetrics = [
+    {
+      icon: FileSpreadsheet,
+      label: "Base visible",
+      value: `${snapshot.mares.length}`,
+      hint: "Fiches juments disponibles sur le perimetre actif.",
+    },
+    {
+      icon: GitBranch,
+      label: "Suivis",
+      value: `${snapshot.reproductions.length}`,
+      hint: "Parcours reproduction actuellement consultables.",
+    },
+    {
+      icon: MapPinned,
+      label: "Centres couverts",
+      value: `${visibleCentres.length}`,
+      hint: scopedCentreId
+        ? "Lecture centre verrouillee sur votre session."
+        : "Couverture visible sur l'ensemble du haras.",
+    },
+    {
+      icon: AlertTriangle,
+      label: "Attention",
+      value: `${alertCentres.length}`,
+      hint:
+        alertCentres.length > 0
+          ? `${totalPendingReviews} relectures remontees a absorber.`
+          : "Aucune derive critique sur le perimetre visible.",
+    },
+  ];
+
+  const heroTags = [
+    `Role ${session.role}`,
+    can("export") ? "Export autorise" : "Lecture et saisie",
+    scopedCentreId ? "Vue centre verrouillee" : `${visibleCentres.length} centres visibles`,
+  ];
+
+  const heroSpotlight =
+    alertCentres.length > 0
+      ? {
+          label: "Point d'attention",
+          title: `${alertCentres.length} centre(s) a reprendre`,
+          description:
+            "Le dashboard met en avant les centres a relire en priorite pour accelerer les corrections, la revalidation et la coordination de campagne.",
+          meta: `${totalPendingReviews} relectures ouvertes`,
+          tone: "warning" as const,
+        }
+      : {
+          label: "Cadence stable",
+          title: "Flux de campagne sous controle",
+          description:
+            "La saisie, la consultation et les exports restent disponibles sans signal critique. Le focus peut rester sur l'execution metier.",
+          meta: `${totalVisibleRows} lignes visibles`,
+          tone: "success" as const,
+        };
 
   const dashboardItems = useMemo<DashboardItem[]>(() => {
     const commonTimestamp = formatDateTime(session.lastValidatedAt);
-    const exportHref = buildWorkspacePath(harasId, "exports");
-    const dataHref = buildWorkspacePath(harasId, "saisies");
+
     const operations: DashboardItem[] = [
       {
         id: "mares",
         section: "TODO",
         filterId: "essential",
         title: "Base juments",
-        description: "Créer, relire et retrouver rapidement les fiches juments actives.",
+        description:
+          "Creer, relire et retrouver rapidement les fiches juments actives.",
         badge: `${snapshot.mares.length} fiches`,
         badgeVariant: "info",
         href: buildWorkspacePath(harasId, "juments"),
@@ -71,12 +136,12 @@ export default function HarasDashboardPage() {
           { icon: MapPinned, label: `${visibleCentres.length} centres couverts` },
           { icon: ShieldCheck, label: session.role },
         ],
-        detailEyebrow: "Base métier",
+        detailEyebrow: "Base metier",
         detailTitle: "Gestion des juments",
         detailDescription:
-          "Cette vue centralise la création, la recherche et la mise à jour des fiches juments sur le périmètre actif. La logique métier reste inchangée, seule la lecture de l’interface est simplifiée.",
-        highlightTitle: "Point d’entrée de la campagne",
-        highlightText: `${snapshot.mares.length} fiches visibles sur ${visibleCentres.length} centres. Utilisez cette entrée pour qualifier la base avant la reproduction.`,
+          "Cette vue centralise la creation, la recherche et la mise a jour des fiches juments sur le perimetre actif. Le flux metier reste inchange, seule la lecture gagne en clarte.",
+        highlightTitle: "Point d'entree de la campagne",
+        highlightText: `${snapshot.mares.length} fiches visibles sur ${visibleCentres.length} centres. Utilisez cette entree pour qualifier la base avant la reproduction.`,
         attachments: [
           {
             id: "mares-view",
@@ -86,7 +151,7 @@ export default function HarasDashboardPage() {
           },
           {
             id: "mares-data",
-            label: "Consulter les données liées",
+            label: "Consulter les donnees liees",
             href: `${dataHref}?tab=mares`,
             downloadHref: can("export") ? exportHref : `${dataHref}?tab=mares`,
           },
@@ -94,11 +159,11 @@ export default function HarasDashboardPage() {
         comments: [
           {
             id: "mares-comment-1",
-            author: "Session métier",
+            author: "Session metier",
             role: session.role,
             timestamp: commonTimestamp,
             message:
-              "La base juments reste le premier point de contrôle avant toute nouvelle saisie.",
+              "La base juments reste le premier point de controle avant toute nouvelle saisie.",
           },
           {
             id: "mares-comment-2",
@@ -106,7 +171,7 @@ export default function HarasDashboardPage() {
             role: haras.shortName,
             timestamp: `${visibleCentres.length} centres`,
             message:
-              "Les fiches visibles sont déjà filtrées sur le périmètre actif pour éviter les écarts de saisie.",
+              "Les fiches visibles sont deja cadrees sur le perimetre actif pour limiter les ecarts de saisie.",
           },
         ],
       },
@@ -115,21 +180,22 @@ export default function HarasDashboardPage() {
         section: "TODO",
         filterId: "essential",
         title: "Suivi reproduction",
-        description: "Lancer une saisie complète de reproduction avec la fiche jument.",
+        description: "Lancer une saisie complete de reproduction avec la fiche jument.",
         badge: `${snapshot.reproductions.length} suivis`,
         badgeVariant: "default",
         href: buildWorkspacePath(harasId, "reproduction"),
         meta: [
           { icon: GitBranch, label: `${snapshot.reproductions.length} enregistrements` },
           { icon: MapPinned, label: `${visibleCentres.length} centres visibles` },
-          { icon: ShieldCheck, label: "Saisie guidée" },
+          { icon: ShieldCheck, label: "Saisie guidee" },
         ],
-        detailEyebrow: "Formulaire guidé",
+        detailEyebrow: "Formulaire guide",
         detailTitle: "Reproduction",
         detailDescription:
-          "Le flux de reproduction conserve sa logique métier actuelle, avec un parcours complet pour la jument, l’étalon, les cycles et les constats associés.",
-        highlightTitle: "Écran central de saisie",
-        highlightText: "Utilisez ce module pour enregistrer les cycles, le diagnostic et le suivi FARAS sans changer le fonctionnement actuel.",
+          "Le flux reproduction conserve sa logique complete pour la jument, l'etalon, les cycles et les constats associes. La refonte porte uniquement sur la lisibilite du pilotage.",
+        highlightTitle: "Ecran central de saisie",
+        highlightText:
+          "Utilisez ce module pour enregistrer les cycles, le diagnostic et le suivi FARAS sans changer le fonctionnement actuel.",
         attachments: [
           {
             id: "reproduction-form",
@@ -147,19 +213,19 @@ export default function HarasDashboardPage() {
         comments: [
           {
             id: "repro-comment-1",
-            author: "Contrôle qualité",
+            author: "Controle qualite",
             role: "Workflow",
             timestamp: commonTimestamp,
             message:
-              "Les résultats de cycle et le diagnostic restent regroupés dans la même chaîne de validation.",
+              "Les resultats de cycle et le diagnostic restent regroupes dans la meme chaine de validation.",
           },
           {
             id: "repro-comment-2",
             author: "SOREC",
-            role: "Métier",
+            role: "Metier",
             timestamp: `${snapshot.reproductions.length} suivis`,
             message:
-              "Le formulaire reproduction reste séparé de la déclaration de naissance pour garder un flux clair.",
+              "Le formulaire reproduction reste separe de la declaration de naissance pour garder un flux clair.",
           },
         ],
       },
@@ -167,32 +233,33 @@ export default function HarasDashboardPage() {
         id: "birth-declaration",
         section: "TODO",
         filterId: "essential",
-        title: "Déclaration de naissance",
-        description: "Accéder à l’écran dédié pour gérer les naissances déclarées.",
-        badge: `${snapshot.products.length} déclarations`,
+        title: "Declaration de naissance",
+        description: "Acceder au module dedie pour gerer les naissances declarees.",
+        badge: `${snapshot.products.length} declarations`,
         badgeVariant: "success",
         href: buildWorkspacePath(harasId, "produits"),
         meta: [
           { icon: ClipboardCheck, label: `${snapshot.products.length} naissances` },
           { icon: MapPinned, label: `${visibleCentres.length} centres suivis` },
-          { icon: ShieldCheck, label: "Module dédié" },
+          { icon: ShieldCheck, label: "Module dedie" },
         ],
         detailEyebrow: "Naissances",
-        detailTitle: "Déclaration de naissance",
+        detailTitle: "Declaration de naissance",
         detailDescription:
-          "La déclaration de naissance reste volontairement séparée du flux reproduction. Cette séparation protège la logique métier et évite les doubles saisies.",
+          "La declaration de naissance reste volontairement separee du flux reproduction. Cette separation protege la logique metier et evite les doubles saisies.",
         highlightTitle: "Module autonome",
-        highlightText: "L’onglet dédié concentre les informations de naissance, l’identification et le statut sans mélanger les étapes amont.",
+        highlightText:
+          "L'onglet dedie concentre les informations de naissance, d'identification et de statut sans melanger les etapes amont.",
         attachments: [
           {
             id: "birth-form",
-            label: "Ouvrir les déclarations",
+            label: "Ouvrir les declarations",
             href: buildWorkspacePath(harasId, "produits"),
             downloadHref: buildWorkspacePath(harasId, "produits"),
           },
           {
             id: "birth-data",
-            label: "Consulter l’historique des naissances",
+            label: "Consulter l'historique des naissances",
             href: `${dataHref}?tab=produits`,
             downloadHref: can("export") ? exportHref : `${dataHref}?tab=produits`,
           },
@@ -204,15 +271,15 @@ export default function HarasDashboardPage() {
             role: "Module",
             timestamp: commonTimestamp,
             message:
-              "L’entrée reste isolée dans son onglet pour éviter tout mélange avec la reproduction.",
+              "L'entree reste isolee dans son onglet pour eviter tout melange avec la reproduction.",
           },
           {
             id: "birth-comment-2",
             author: "Pilotage",
             role: haras.shortName,
-            timestamp: `${snapshot.products.length} déclarations`,
+            timestamp: `${snapshot.products.length} declarations`,
             message:
-              "Les déclarations visibles reflètent uniquement le périmètre autorisé de votre session.",
+              "Les declarations visibles refletent uniquement le perimetre autorise de votre session.",
           },
         ],
       },
@@ -223,22 +290,24 @@ export default function HarasDashboardPage() {
         id: "data-room",
         section: "IN PROGRESS",
         filterId: "monitoring",
-        title: "Vue consolidée",
-        description: "Parcourir les données saisies, filtrer et relire les enregistrements.",
-        badge: `${snapshot.mares.length + snapshot.reproductions.length + snapshot.products.length} lignes`,
+        title: "Vue consolidee",
+        description:
+          "Parcourir les donnees saisies, filtrer et relire les enregistrements.",
+        badge: `${totalVisibleRows} lignes`,
         badgeVariant: "outline",
         href: dataHref,
         meta: [
           { icon: Search, label: "Recherche rapide" },
           { icon: MapPinned, label: `${visibleCentres.length} centres` },
-          { icon: ShieldCheck, label: "Lecture consolidée" },
+          { icon: ShieldCheck, label: "Lecture transversale" },
         ],
-        detailEyebrow: "Contrôle",
-        detailTitle: "Données consolidées",
+        detailEyebrow: "Controle",
+        detailTitle: "Donnees consolidees",
         detailDescription:
-          "Cette vue permet de relire juments, reproductions et déclarations de naissance dans un seul espace de consultation, sans modifier la structure métier existante.",
+          "Cette vue permet de relire juments, reproductions et declarations de naissance dans un seul espace de consultation, sans modifier la structure metier existante.",
         highlightTitle: "Relecture transverse",
-        highlightText: "Utilisez cette entrée pour retrouver un dossier, comparer les enregistrements ou préparer une extraction métier.",
+        highlightText:
+          "Utilisez cette entree pour retrouver un dossier, comparer les enregistrements ou preparer une extraction metier.",
         attachments: [
           {
             id: "data-view",
@@ -248,7 +317,7 @@ export default function HarasDashboardPage() {
           },
           {
             id: "data-fertility",
-            label: "Voir l’onglet fertilité",
+            label: "Voir l'onglet fertilite",
             href: `${dataHref}?tab=fertilite`,
             downloadHref: can("export") ? exportHref : `${dataHref}?tab=fertilite`,
           },
@@ -260,15 +329,15 @@ export default function HarasDashboardPage() {
             role: session.role,
             timestamp: commonTimestamp,
             message:
-              "Les filtres de consultation respectent automatiquement le périmètre centre ou haras en cours.",
+              "Les filtres de consultation respectent automatiquement le perimetre centre ou haras en cours.",
           },
           {
             id: "data-comment-2",
-            author: "Support qualité",
+            author: "Support qualite",
             role: "Lecture",
             timestamp: `${visibleCentres.length} centres`,
             message:
-              "La vue consolidée sert de point de contrôle rapide avant export ou validation finale.",
+              "La vue consolidee sert de point de controle rapide avant export ou validation finale.",
           },
         ],
       },
@@ -279,22 +348,24 @@ export default function HarasDashboardPage() {
         id: "exports",
         section: "IN PROGRESS",
         filterId: "monitoring",
-        title: "Exports métier",
-        description: "Préparer les sorties et récupérer les bases utiles au suivi.",
-        badge: "Téléchargements",
+        title: "Exports metier",
+        description:
+          "Preparer les sorties et recuperer les bases utiles au suivi de campagne.",
+        badge: "Telechargements",
         badgeVariant: "info",
         href: exportHref,
         meta: [
           { icon: FolderOutput, label: "CSV / XLSX" },
           { icon: MapPinned, label: haras.shortName },
-          { icon: ShieldCheck, label: "Droits d’export" },
+          { icon: ShieldCheck, label: "Droits d'export" },
         ],
         detailEyebrow: "Exports",
-        detailTitle: "Exports opérationnels",
+        detailTitle: "Exports operationnels",
         detailDescription:
-          "Les exports conservent les mêmes règles d’accès. La refonte ne modifie ni le contenu ni les droits, uniquement la lecture de l’espace.",
-        highlightTitle: "Sorties prêtes à l’usage",
-        highlightText: "Utilisez cet espace pour récupérer les bases métiers sans quitter le workflow du dashboard.",
+          "Les exports conservent les memes regles d'acces. La refonte ne modifie ni le contenu ni les droits, uniquement la lecture de l'espace.",
+        highlightTitle: "Sorties pretes a l'usage",
+        highlightText:
+          "Utilisez cet espace pour recuperer les bases metier sans quitter le workflow du dashboard.",
         attachments: [
           {
             id: "exports-base",
@@ -304,7 +375,7 @@ export default function HarasDashboardPage() {
           },
           {
             id: "exports-data",
-            label: "Relire la vue consolidée",
+            label: "Relire la vue consolidee",
             href: dataHref,
             downloadHref: exportHref,
           },
@@ -312,19 +383,19 @@ export default function HarasDashboardPage() {
         comments: [
           {
             id: "exports-comment-1",
-            author: "Rôle export",
+            author: "Role export",
             role: session.role,
             timestamp: commonTimestamp,
             message:
-              "Les sorties disponibles dépendent du rôle actif, sans modifier la source métier en amont.",
+              "Les sorties disponibles dependent du role actif, sans modifier la source metier en amont.",
           },
           {
             id: "exports-comment-2",
             author: "SOREC",
-            role: "Contrôle",
-            timestamp: "Disponibilité active",
+            role: "Controle",
+            timestamp: "Disponibilite active",
             message:
-              "Les exports peuvent être préparés après relecture des données consolidées.",
+              "Les exports peuvent etre prepares apres relecture des donnees consolidees.",
           },
         ],
       });
@@ -337,7 +408,7 @@ export default function HarasDashboardPage() {
             section: "IN PROGRESS",
             filterId: "monitoring",
             title: centre.name,
-            description: `${centre.pendingReviews} fiche(s) à revoir avant la prochaine saisie ou validation.`,
+            description: `${centre.pendingReviews} fiche(s) a revoir avant la prochaine saisie ou validation.`,
             badge: centre.status,
             badgeVariant: centre.status === "prioritaire" ? "danger" : "warning",
             href: buildDashboardPath(harasId, "centre", centre.id),
@@ -349,9 +420,9 @@ export default function HarasDashboardPage() {
             detailEyebrow: "Monitoring",
             detailTitle: centre.name,
             detailDescription:
-              "Cette alerte met en avant un centre qui nécessite une attention particulière. Le contenu métier n’est pas modifié: seuls les indicateurs sont réorganisés pour une lecture plus rapide.",
+              "Cette alerte met en avant un centre qui necessite une attention particuliere. Le contenu metier n'est pas modifie, seuls les indicateurs sont reordonnes pour une lecture plus rapide.",
             highlightTitle: "Point de vigilance",
-            highlightText: `${centre.pendingReviews} élément(s) en attente sur ${centre.region}. Une relecture est recommandée avant la prochaine session de saisie.`,
+            highlightText: `${centre.pendingReviews} element(s) en attente sur ${centre.region}. Une relecture est recommandee avant la prochaine session de saisie.`,
             attachments: [
               {
                 id: `${centre.id}-dashboard`,
@@ -361,7 +432,7 @@ export default function HarasDashboardPage() {
               },
               {
                 id: `${centre.id}-data`,
-                label: "Consulter les données du haras",
+                label: "Consulter les donnees du haras",
                 href: dataHref,
                 downloadHref: can("export") ? exportHref : dataHref,
               },
@@ -373,7 +444,7 @@ export default function HarasDashboardPage() {
                 role: "Responsable centre",
                 timestamp: centre.status,
                 message:
-                  "Le centre reste visible dans le périmètre actuel pour faciliter la relance et la relecture des dossiers.",
+                  "Le centre reste visible dans le perimetre actuel pour faciliter la relance et la relecture des dossiers.",
               },
               {
                 id: `${centre.id}-comment-2`,
@@ -381,7 +452,7 @@ export default function HarasDashboardPage() {
                 role: haras.shortName,
                 timestamp: commonTimestamp,
                 message:
-                  "Cette alerte provient des indicateurs de relecture et de synchronisation déjà disponibles dans les données.",
+                  "Cette alerte provient des indicateurs de relecture et de synchronisation deja presents dans les donnees.",
               },
             ],
           }))
@@ -390,22 +461,24 @@ export default function HarasDashboardPage() {
               id: "calm-flow",
               section: "IN PROGRESS",
               filterId: "monitoring",
-              title: "Flux stabilisé",
-              description: "Aucun centre prioritaire ni demande urgente de relecture sur le périmètre visible.",
+              title: "Flux stabilise",
+              description:
+                "Aucun centre prioritaire ni demande urgente de relecture sur le perimetre visible.",
               badge: "Stable",
               badgeVariant: "success",
               href: dataHref,
               meta: [
                 { icon: ShieldCheck, label: "Aucune alerte critique" },
                 { icon: MapPinned, label: `${visibleCentres.length} centres suivis` },
-                { icon: Search, label: "Contrôle disponible" },
+                { icon: Search, label: "Controle disponible" },
               ],
               detailEyebrow: "Monitoring",
-              detailTitle: "Surveillance maîtrisée",
+              detailTitle: "Surveillance maitrisee",
               detailDescription:
-                "Le tableau de bord ne remonte aucun point critique sur les centres visibles. Les modules de consultation et d’export restent accessibles pour des vérifications complémentaires.",
-              highlightTitle: "Alerte maîtrisée",
-              highlightText: "Le flux est stable sur le périmètre actuel. Vous pouvez poursuivre la saisie ou ouvrir la consultation pour un contrôle ciblé.",
+                "Le tableau de bord ne remonte aucun point critique sur les centres visibles. Les modules de consultation et d'export restent accessibles pour des verifications complementaires.",
+              highlightTitle: "Cadence lisible",
+              highlightText:
+                "Le flux est stable sur le perimetre actuel. Vous pouvez poursuivre la saisie ou ouvrir la consultation pour un controle cible.",
               attachments: [
                 {
                   id: "calm-data",
@@ -415,7 +488,7 @@ export default function HarasDashboardPage() {
                 },
                 {
                   id: "calm-repro",
-                  label: "Revenir à la reproduction",
+                  label: "Revenir a la reproduction",
                   href: buildWorkspacePath(harasId, "reproduction"),
                   downloadHref: buildWorkspacePath(harasId, "reproduction"),
                 },
@@ -423,11 +496,11 @@ export default function HarasDashboardPage() {
               comments: [
                 {
                   id: "calm-comment-1",
-                  author: "Système",
+                  author: "Systeme",
                   role: "Monitoring",
                   timestamp: commonTimestamp,
                   message:
-                    "Aucun centre ne dépasse actuellement le seuil critique de relecture ou de synchronisation.",
+                    "Aucun centre ne depasse actuellement le seuil critique de relecture ou de synchronisation.",
                 },
                 {
                   id: "calm-comment-2",
@@ -435,7 +508,7 @@ export default function HarasDashboardPage() {
                   role: haras.shortName,
                   timestamp: `${visibleCentres.length} centres`,
                   message:
-                    "La vigilance reste disponible via la consultation consolidée et les exports si nécessaire.",
+                    "La vigilance reste disponible via la consultation consolidee et les exports si necessaire.",
                 },
               ],
             },
@@ -445,6 +518,8 @@ export default function HarasDashboardPage() {
   }, [
     alertCentres,
     can,
+    dataHref,
+    exportHref,
     haras.shortName,
     harasId,
     session.lastValidatedAt,
@@ -452,20 +527,21 @@ export default function HarasDashboardPage() {
     snapshot.mares.length,
     snapshot.products.length,
     snapshot.reproductions.length,
+    totalVisibleRows,
     visibleCentres.length,
   ]);
 
   const filters = useMemo(
     () => [
-      { id: "all", label: "Tout", count: `${dashboardItems.length}` },
+      { id: "all", label: "Vue complete", count: `${dashboardItems.length}` },
       {
         id: "essential",
-        label: "Essentiel",
+        label: "Modules",
         count: `${dashboardItems.filter((item) => item.filterId === "essential").length}`,
       },
       {
         id: "monitoring",
-        label: "Suivi",
+        label: "Pilotage",
         count: `${dashboardItems.filter((item) => item.filterId === "monitoring").length}`,
       },
     ],
@@ -497,12 +573,18 @@ export default function HarasDashboardPage() {
   const sections = [
     {
       id: "todo",
-      label: "TODO",
+      eyebrow: "Execution",
+      label: "Modules prioritaires",
+      description:
+        "Les points d'entree qui lancent la campagne, la qualification des fiches et les actions metier du quotidien.",
       items: filteredItems.filter((item) => item.section === "TODO"),
     },
     {
       id: "in-progress",
-      label: "IN PROGRESS",
+      eyebrow: "Pilotage",
+      label: "Surveillance et lecture transverse",
+      description:
+        "Les vues de controle, les alertes de centres et les points de consultation qui soutiennent la decision.",
       items: filteredItems.filter((item) => item.section === "IN PROGRESS"),
     },
   ];
@@ -514,35 +596,54 @@ export default function HarasDashboardPage() {
 
     const shareUrl = `${window.location.origin}${selectedItem.href}`;
     void navigator.clipboard.writeText(shareUrl);
-    toast.success("Lien copié", {
-      description: `Le raccourci vers ${selectedItem.title} a été copié.`,
+    toast.success("Lien copie", {
+      description: `Le raccourci vers ${selectedItem.title} a ete copie.`,
     });
   };
 
   return (
     <ProtectedPage harasId={harasId}>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_460px]">
         <div className="space-y-6">
           <HeaderFilters
-            title={`Dashboard ${haras.shortName}`}
-            description="Un point d’entrée plus calme et plus lisible pour piloter la saisie, ouvrir les modules utiles et suivre les centres visibles."
+            eyebrow={scopedCentreId ? "Centre focus" : "Haras executive board"}
+            title={`Pilotage ${haras.shortName}`}
+            description="Une lecture plus premium pour piloter la saisie, hierarchiser les modules et surveiller les centres sans toucher au flux metier existant."
+            status={scopedCentreId ? "Perimetre centre" : haras.stats.status}
             filters={filters}
             activeFilter={activeFilter}
             onChange={setActiveFilter}
+            tags={heroTags}
+            metrics={heroMetrics}
+            spotlight={heroSpotlight}
+            coverImage={haras.coverImage}
             actions={
-              <Button asChild variant="outline">
-                <Link href={buildWorkspacePath(harasId, "juments")}>
-                  Ouvrir les juments
-                </Link>
-              </Button>
+              <>
+                <Button asChild>
+                  <Link href={buildWorkspacePath(harasId, "juments")}>
+                    <ArrowUpRight className="h-4 w-4" />
+                    Ouvrir les juments
+                  </Link>
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link href={dataHref}>Vue consolidee</Link>
+                </Button>
+                {can("export") ? (
+                  <Button asChild variant="outline">
+                    <Link href={exportHref}>Exporter</Link>
+                  </Button>
+                ) : null}
+              </>
             }
           />
 
-          <div className="space-y-8">
+          <div className="space-y-10">
             {sections.map((section) => (
               <SectionGroup
                 key={section.id}
+                eyebrow={section.eyebrow}
                 label={section.label}
+                description={section.description}
                 items={section.items}
                 selectedId={selectedItem?.id}
                 onSelect={setSelectedItemId}

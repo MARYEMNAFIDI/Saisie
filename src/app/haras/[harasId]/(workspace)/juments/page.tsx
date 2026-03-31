@@ -75,8 +75,8 @@ export default function MareListPage() {
       `fiche-jument-${record.farasNumber}.json`,
       JSON.stringify(record, null, 2),
     );
-    toast.success("Export simulé", {
-      description: `La fiche ${record.name} a été exportée en JSON local.`,
+    toast.success("Export simule", {
+      description: `La fiche ${record.name} a ete exportee en JSON local.`,
     });
   };
 
@@ -84,25 +84,25 @@ export default function MareListPage() {
     <ProtectedPage harasId={harasId}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Liste des juments"
-          title="Fiches de juments"
-          description="Consultation filtrable des fiches saisies, avec actions conditionnées par le rôle actif et le périmètre d'accès validé."
+          eyebrow="Parcours CRE"
+          title="1. Trouver une jument"
+          description="Commencez ici pour rechercher une fiche, verifier les informations d'une jument ou preparer la saisie de reproduction."
           actions={
             <>
               <Badge variant="outline" className="bg-white/80">
-                {filteredRecords.length} résultat(s)
+                {filteredRecords.length} resultat(s)
               </Badge>
               {capabilities.canEdit ? (
-                <Button asChild>
+                <Button asChild variant="accent">
                   <Link href={buildWorkspacePath(harasId, "reproduction")}>
                     <Plus className="h-4 w-4" />
-                    Nouvelle reproduction
+                    Passer a la reproduction
                   </Link>
                 </Button>
               ) : (
                 <Badge variant="warning">
                   <ShieldAlert className="mr-2 h-4 w-4" />
-                  Champs verrouillés
+                  Champs verrouilles
                 </Badge>
               )}
             </>
@@ -122,12 +122,12 @@ export default function MareListPage() {
           <EmptyState
             icon={Plus}
             title="Aucune fiche disponible"
-            description="Le périmètre actuel ne contient pas encore de fiches jument. Créez-en une pour alimenter le prototype."
+            description="Le perimetre actuel ne contient pas encore de fiche jument. Commencez par creer une saisie pour alimenter l'espace CRE."
             action={
               capabilities.canEdit ? (
-                <Button asChild>
+                <Button asChild variant="accent">
                   <Link href={buildWorkspacePath(harasId, "reproduction")}>
-                    Creer une reproduction
+                    Commencer une saisie
                   </Link>
                 </Button>
               ) : null

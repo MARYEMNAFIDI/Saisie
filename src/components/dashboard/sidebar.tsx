@@ -2,11 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {
-  LogOut,
-  Settings2,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, LogOut, Settings2, type LucideIcon } from "lucide-react";
 
 import { SorecLogo } from "@/components/branding/sorec-logo";
 import { cn } from "@/lib/utils";
@@ -16,6 +12,7 @@ type SidebarIcon = LucideIcon | "horseBirth";
 export type SidebarItem = {
   href: string;
   label: string;
+  description?: string;
   icon: SidebarIcon;
   active: boolean;
 };
@@ -37,7 +34,9 @@ const SidebarIconRenderer = ({
         height={18}
         className={cn(
           "h-[18px] w-[18px] object-contain",
-          active ? "brightness-0 invert" : "opacity-80 brightness-0",
+          active
+            ? "opacity-90 brightness-0 dark:brightness-0 dark:invert"
+            : "opacity-80 brightness-0 dark:brightness-0 dark:invert",
         )}
       />
     );
@@ -57,21 +56,47 @@ const SidebarLink = ({
   <Link
     href={item.href}
     className={cn(
-      "flex h-12 items-center rounded-2xl px-3 transition-all duration-200 group-hover/sidebar:justify-start",
+      "group flex items-center gap-3 rounded-[1.35rem] border px-4 py-3 transition-all duration-200",
       item.active
-        ? "bg-slate-950 text-white shadow-[0_18px_34px_-28px_rgba(15,23,42,0.65)]"
+        ? "border-amber-200 bg-amber-50 text-amber-950 shadow-[0_18px_38px_-28px_rgba(180,83,9,0.18)] dark:border-sky-400/30 dark:bg-sky-400/12 dark:text-sky-100 dark:shadow-[0_18px_38px_-28px_rgba(56,189,248,0.32)]"
         : tone === "subtle"
-          ? "text-slate-400 hover:bg-white hover:text-slate-900 hover:shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)]"
-          : "text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)]",
-      "justify-center",
+          ? "border-transparent bg-transparent text-slate-500 hover:border-white/70 hover:bg-white/82 hover:text-slate-950 dark:text-slate-400 dark:hover:border-slate-800 dark:hover:bg-slate-900/80 dark:hover:text-slate-100"
+          : "border-transparent bg-white/55 text-slate-600 hover:border-white/70 hover:bg-white hover:text-slate-950 dark:bg-slate-950/55 dark:text-slate-300 dark:hover:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-slate-100",
     )}
   >
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+    <span
+      className={cn(
+        "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors",
+        item.active
+          ? "bg-white text-amber-900 dark:bg-sky-400/14 dark:text-sky-200"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300",
+      )}
+    >
       <SidebarIconRenderer icon={item.icon} active={item.active} />
     </span>
-    <span className="ml-3 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-200 group-hover/sidebar:max-w-[140px] group-hover/sidebar:opacity-100">
-      {item.label}
+
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-sm font-semibold">{item.label}</span>
+      <span
+        className={cn(
+          "block text-xs",
+          item.active
+            ? "text-amber-900/60 dark:text-sky-100/70"
+            : "text-slate-400 dark:text-slate-500",
+        )}
+      >
+        {item.description ?? "Acces direct"}
+      </span>
     </span>
+
+    <ArrowRight
+      className={cn(
+        "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5",
+        item.active
+          ? "text-amber-900/60 dark:text-sky-100/70"
+          : "text-slate-300 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-300",
+      )}
+    />
   </Link>
 );
 
@@ -82,6 +107,9 @@ export const Sidebar = ({
   secondaryItems,
   settingsHref,
   onLogout,
+  coverImage,
+  statusLabel,
+  roleLabel,
 }: {
   title: string;
   subtitle: string;
@@ -89,72 +117,127 @@ export const Sidebar = ({
   secondaryItems: SidebarItem[];
   settingsHref: string;
   onLogout: () => void;
+  coverImage?: string;
+  statusLabel?: string;
+  roleLabel?: string;
 }) => (
-  <div className="group/sidebar sticky top-24 z-20 h-[calc(100vh-7rem)] w-[78px] transition-[width] duration-300 hover:w-[220px]">
-    <div className="flex h-full flex-col justify-between rounded-[24px] border border-slate-200/90 bg-[#F8F9FB]/95 p-3 shadow-[0_28px_60px_-36px_rgba(15,23,42,0.18)] backdrop-blur">
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <Link
-            href="/"
-            className="flex h-12 items-center justify-center rounded-2xl bg-white shadow-[0_14px_30px_-24px_rgba(15,23,42,0.24)] transition-all duration-200 group-hover/sidebar:justify-start group-hover/sidebar:px-3"
-          >
-            <span className="text-lg font-semibold text-slate-950 group-hover/sidebar:hidden">
-              S
-            </span>
-            <SorecLogo size="sm" className="hidden group-hover/sidebar:inline-flex" />
-          </Link>
+  <div className="sticky top-24 z-20 space-y-4">
+    <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,248,252,0.96))] p-5 text-slate-950 shadow-[0_32px_76px_-48px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.92))] dark:text-slate-50 dark:shadow-[0_32px_76px_-48px_rgba(2,6,23,0.84)]">
+      {coverImage ? (
+        <div className="absolute inset-0">
+          <Image
+            src={coverImage}
+            alt=""
+            fill
+            className="object-cover opacity-14"
+            sizes="320px"
+          />
+        </div>
+      ) : null}
+      <div className="absolute inset-0 bg-[linear-gradient(155deg,rgba(255,255,255,0.82),rgba(243,247,252,0.9)_48%,rgba(255,247,237,0.9))] dark:bg-[linear-gradient(155deg,rgba(15,23,42,0.12),rgba(15,23,42,0.08)_48%,rgba(56,189,248,0.08))]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.68),transparent_24%),radial-gradient(circle_at_85%_18%,rgba(251,191,36,0.14),transparent_18%),radial-gradient(circle_at_100%_100%,rgba(125,211,252,0.12),transparent_22%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(96,165,250,0.14),transparent_24%),radial-gradient(circle_at_85%_18%,rgba(56,189,248,0.14),transparent_18%),radial-gradient(circle_at_100%_100%,rgba(245,158,11,0.08),transparent_22%)]" />
 
-          <div className="rounded-2xl bg-white/70 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-            <p className="hidden text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400 group-hover/sidebar:block">
-              Workspace
-            </p>
-            <p className="mt-0 truncate text-sm font-semibold text-slate-900 opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100">
-              {title}
-            </p>
-            <p className="truncate text-xs text-slate-500 opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100">
-              {subtitle}
-            </p>
-          </div>
+      <div className="relative space-y-6">
+        <Link href="/" className="inline-flex">
+          <SorecLogo size="sm" />
+        </Link>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">
+            Workspace
+          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+          <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
+            {subtitle}
+          </p>
         </div>
 
-        <nav className="space-y-2">
-          {primaryItems.map((item) => (
-            <SidebarLink key={item.href} item={item} />
-          ))}
-        </nav>
+        {statusLabel || roleLabel ? (
+          <div className="grid gap-3">
+            {statusLabel ? (
+              <div className="rounded-[1.35rem] border border-white/70 bg-white/84 p-3 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-none">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
+                  Statut
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-100">
+                  {statusLabel}
+                </p>
+              </div>
+            ) : null}
 
-        {secondaryItems.length > 0 ? (
-          <div className="space-y-2 border-t border-slate-200 pt-4">
-            {secondaryItems.map((item) => (
-              <SidebarLink key={item.href} item={item} tone="subtle" />
-            ))}
+            {roleLabel ? (
+              <div className="rounded-[1.35rem] border border-white/70 bg-white/84 p-3 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-none">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400 dark:text-slate-500">
+                  Role actif
+                </p>
+                <p className="mt-2 text-sm font-medium text-slate-700 dark:text-slate-100">
+                  {roleLabel}
+                </p>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
+    </div>
 
-      <div className="space-y-2 border-t border-slate-200 pt-4">
+    <div className="rounded-[2rem] border border-white/70 bg-white/76 p-4 shadow-soft backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_55px_-36px_rgba(2,6,23,0.82)]">
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <p className="section-caption">Modules</p>
+          <nav className="space-y-2">
+            {primaryItems.map((item) => (
+              <SidebarLink key={item.href} item={item} />
+            ))}
+          </nav>
+        </div>
+
+        {secondaryItems.length > 0 ? (
+          <div className="space-y-2 border-t border-slate-200/80 pt-4 dark:border-slate-800">
+            <p className="section-caption">Pilotage</p>
+            <div className="space-y-2">
+              {secondaryItems.map((item) => (
+                <SidebarLink key={item.href} item={item} tone="subtle" />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+
+    <div className="rounded-[2rem] border border-white/70 bg-white/76 p-4 shadow-soft backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/72 dark:shadow-[0_22px_55px_-36px_rgba(2,6,23,0.82)]">
+      <div className="space-y-2">
+        <p className="section-caption">Systeme</p>
         <Link
           href={settingsHref}
-          className="flex h-12 items-center justify-center rounded-2xl text-slate-500 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)] group-hover/sidebar:justify-start group-hover/sidebar:px-3"
+          className="group flex items-center gap-3 rounded-[1.35rem] border border-transparent bg-white/55 px-4 py-3 text-slate-600 transition-all duration-200 hover:border-white/70 hover:bg-white hover:text-slate-950 dark:bg-slate-950/55 dark:text-slate-300 dark:hover:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-slate-100"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
             <Settings2 className="h-[18px] w-[18px]" />
           </span>
-          <span className="ml-3 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-200 group-hover/sidebar:max-w-[140px] group-hover/sidebar:opacity-100">
-            Paramètres
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">Parametres</span>
+            <span className="block text-xs text-slate-400 dark:text-slate-500">
+              Acces et configuration
+            </span>
           </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-300" />
         </Link>
+
         <button
           type="button"
           onClick={onLogout}
-          className="flex h-12 w-full items-center justify-center rounded-2xl text-slate-500 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)] group-hover/sidebar:justify-start group-hover/sidebar:px-3"
+          className="group flex w-full items-center gap-3 rounded-[1.35rem] border border-transparent bg-white/55 px-4 py-3 text-left text-slate-600 transition-all duration-200 hover:border-white/70 hover:bg-white hover:text-slate-950 dark:bg-slate-950/55 dark:text-slate-300 dark:hover:border-slate-800 dark:hover:bg-slate-900 dark:hover:text-slate-100"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
             <LogOut className="h-[18px] w-[18px]" />
           </span>
-          <span className="ml-3 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-200 group-hover/sidebar:max-w-[140px] group-hover/sidebar:opacity-100">
-            Quitter
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">Quitter</span>
+            <span className="block text-xs text-slate-400 dark:text-slate-500">
+              Reinitialiser la session
+            </span>
           </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-300" />
         </button>
       </div>
     </div>

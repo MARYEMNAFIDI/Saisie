@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 
 import { getHarasById } from "@/data/haras";
 import { formatDiagnosisLabel } from "@/data/mockRecords";
+import { buildWorkspacePath } from "@/lib/navigation";
 import { useMockDatabase } from "@/components/providers/mock-db-provider";
 import { useSession } from "@/components/providers/session-provider";
 import { ProtectedPage } from "@/components/access/protected-page";
@@ -311,17 +313,25 @@ export default function ReproductionPage() {
     <ProtectedPage harasId={harasId}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Reproduction"
-          title="Formulaire reproduction"
-          description="Formulaire automatique complet de reproduction. Le total des cycles est calcule automatiquement."
+          eyebrow="Parcours CRE"
+          title="2. Saisir la reproduction"
+          description="Utilisez cet ecran pour enregistrer la saillie, les cycles et le suivi reproduction. C'est l'etape centrale du parcours de saisie CRE."
           actions={
-            <Button
-              disabled={!can("edit")}
-              onClick={() => setActiveId("new")}
-            >
-              <Plus className="h-4 w-4" />
-              Nouvelle reproduction
-            </Button>
+            <>
+              <Button
+                variant="accent"
+                disabled={!can("edit")}
+                onClick={() => setActiveId("new")}
+              >
+                <Plus className="h-4 w-4" />
+                Nouvelle saisie reproduction
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={buildWorkspacePath(harasId, "produits")}>
+                  Etape suivante: naissance
+                </Link>
+              </Button>
+            </>
           }
         />
 
@@ -336,7 +346,7 @@ export default function ReproductionPage() {
 
           <Card className="mx-auto w-full max-w-6xl">
             <CardHeader>
-              <CardTitle>Historique reproduction</CardTitle>
+              <CardTitle>Saisies reproduction deja enregistrees</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {snapshot.reproductions.length === 0 ? (

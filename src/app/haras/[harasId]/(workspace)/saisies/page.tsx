@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { getHarasById } from "@/data/haras";
 import { formatDiagnosisLabel } from "@/data/mockRecords";
-import { buildWorkspacePath } from "@/lib/navigation";
+import { buildDashboardPath, buildWorkspacePath } from "@/lib/navigation";
 import { downloadTextFile } from "@/lib/storage";
 import { getRoleCapabilities } from "@/lib/permissions";
 import { useMockDatabase } from "@/components/providers/mock-db-provider";
@@ -91,21 +91,26 @@ export default function ConsultationPage() {
     filteredMareIds.has(record.mareId),
   );
   const requestedTab = searchParams.get("tab");
+  const dashboardHref = buildDashboardPath(
+    harasId,
+    session.scope === "centre" ? "centre" : "haras",
+    session.centreId,
+  );
   const defaultTab =
     requestedTab === "reproduction" ||
     requestedTab === "produits" ||
     requestedTab === "fertilite" ||
     requestedTab === "mares"
       ? requestedTab
-      : "reproduction";
+      : "mares";
 
   const handleExport = (label: string, payload: unknown) => {
     downloadTextFile(
       `${label}-${haras.shortName.toLowerCase().replace(/\s+/g, "-")}.json`,
       JSON.stringify(payload, null, 2),
     );
-    toast.success("Export simulé", {
-      description: `${label} a été téléchargé en JSON local.`,
+    toast.success("Export simule", {
+      description: `${label} a ete telecharge en JSON local.`,
     });
   };
 
@@ -113,25 +118,32 @@ export default function ConsultationPage() {
     <ProtectedPage harasId={harasId}>
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Consultation"
-          title="Données saisies"
-          description="Vue consolidée des fiches, suivis et produits avec filtres multi-critères sur le périmètre autorisé."
+          eyebrow="Parcours CRE"
+          title="4. Verifier les donnees"
+          description="Relisez ici les juments, reproductions et naissances pour controler le travail du centre avant validation."
           actions={
-            capabilities.canExport ? (
-              <Button
-                variant="outline"
-                onClick={() =>
-                  handleExport("consultation", {
-                    mares: filteredMares,
-                    reproductions: filteredReproductions,
-                    products: filteredProducts,
-                  })
-                }
-              >
-                <Download className="h-4 w-4" />
-                Exporter la vue
+            <>
+              <Button asChild variant="accent">
+                <Link href={dashboardHref}>
+                  Retour au centre
+                </Link>
               </Button>
-            ) : null
+              {capabilities.canExport ? (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    handleExport("consultation", {
+                      mares: filteredMares,
+                      reproductions: filteredReproductions,
+                      products: filteredProducts,
+                    })
+                  }
+                >
+                  <Download className="h-4 w-4" />
+                  Exporter la vue
+                </Button>
+              ) : null}
+            </>
           }
         />
 
@@ -146,11 +158,48 @@ export default function ConsultationPage() {
 
         <Tabs key={defaultTab} defaultValue={defaultTab}>
           <TabsList>
-            <TabsTrigger value="reproduction">Reproduction</TabsTrigger>
-            <TabsTrigger value="produits">Déclaration de naissance</TabsTrigger>
-            <TabsTrigger value="fertilite">Fertilité</TabsTrigger>
             <TabsTrigger value="mares">Juments</TabsTrigger>
+            <TabsTrigger value="reproduction">Reproduction</TabsTrigger>
+            <TabsTrigger value="produits">Naissances</TabsTrigger>
+            <TabsTrigger value="fertilite">Indicateurs</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="mares">
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Jument</TableHead>
+                      <TableHead>FARAS</TableHead>
+                      <TableHead>Centre</TableHead>
+                      <TableHead>Race</TableHead>
+                      <TableHead>Saison</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMares.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{record.name}</TableCell>
+                        <TableCell>{record.farasNumber}</TableCell>
+                        <TableCell>{centreNameById[record.centreId]}</TableCell>
+                        <TableCell>{record.breed}</TableCell>
+                        <TableCell>{record.season}</TableCell>
+                        <TableCell>
+                          <Button asChild size="sm" variant="ghost">
+                            <Link href={buildWorkspacePath(harasId, `juments/${record.id}`)}>
+                              Voir
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="reproduction">
             <Card>
@@ -159,7 +208,7 @@ export default function ConsultationPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Jument</TableHead>
-                      <TableHead>Étalon</TableHead>
+                      <TableHead>Etalon</TableHead>
                       <TableHead>Cycles</TableHead>
                       <TableHead>Diagnostic</TableHead>
                       <TableHead>Constat</TableHead>
@@ -218,43 +267,6 @@ export default function ConsultationPage() {
               reproductions={filteredReproductions}
               products={filteredProducts}
             />
-          </TabsContent>
-
-          <TabsContent value="mares">
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Jument</TableHead>
-                      <TableHead>FARAS</TableHead>
-                      <TableHead>Centre</TableHead>
-                      <TableHead>Race</TableHead>
-                      <TableHead>Saison</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMares.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.name}</TableCell>
-                        <TableCell>{record.farasNumber}</TableCell>
-                        <TableCell>{centreNameById[record.centreId]}</TableCell>
-                        <TableCell>{record.breed}</TableCell>
-                        <TableCell>{record.season}</TableCell>
-                        <TableCell>
-                          <Button asChild size="sm" variant="ghost">
-                            <Link href={buildWorkspacePath(harasId, `juments/${record.id}`)}>
-                              Voir
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
