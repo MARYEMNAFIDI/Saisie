@@ -17,7 +17,7 @@ export const EmptyState = ({
 }) => (
   <div
     className={cn(
-      "flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-white/65 px-6 py-12 text-center shadow-soft",
+      "flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border bg-card/70 px-6 py-12 text-center shadow-soft dark:bg-card/88 dark:shadow-[0_22px_55px_-36px_rgba(2,6,23,0.82)]",
       className,
     )}
   >

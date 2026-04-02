@@ -57,8 +57,8 @@ export default function ExportsPage() {
 
   const download = (filename: string, content: string, mimeType?: string) => {
     downloadTextFile(filename, content, mimeType);
-    toast.success("Téléchargement simulé", {
-      description: `${filename} a été généré localement.`,
+    toast.success("Telechargement simule", {
+      description: `${filename} a ete genere depuis la base active.`,
     });
   };
 
@@ -67,10 +67,10 @@ export default function ExportsPage() {
       <div className="space-y-6">
         <PageHeader
           eyebrow="Exports"
-          title="Téléchargements simulés"
-          description="Les fichiers sont générés côté front à partir du state local du prototype. La structure est prête à être reliée plus tard à une API d'export."
+          title="Telechargements simules"
+          description="Les fichiers sont generes cote front a partir des donnees visibles dans l'application. La structure peut maintenant etre alimentee par Google Sheets via l'API."
           actions={
-            <div className="rounded-full border border-border bg-white/80 px-4 py-2 text-sm text-muted-foreground">
+            <div className="rounded-full border border-border bg-card/80 px-4 py-2 text-sm text-muted-foreground dark:bg-card/65">
               Dernière mise à jour: {formatDateTime(lastUpdated ?? null)}
             </div>
           }
@@ -177,7 +177,7 @@ export default function ExportsPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 Juments
               </p>
-              <p className="mt-2 text-3xl font-semibold text-slate-950">
+              <p className="mt-2 text-3xl font-semibold text-foreground">
                 {snapshot.mares.length}
               </p>
             </div>
@@ -185,7 +185,7 @@ export default function ExportsPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 Reproduction
               </p>
-              <p className="mt-2 text-3xl font-semibold text-slate-950">
+              <p className="mt-2 text-3xl font-semibold text-foreground">
                 {snapshot.reproductions.length}
               </p>
             </div>
@@ -193,7 +193,7 @@ export default function ExportsPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 Produits
               </p>
-              <p className="mt-2 text-3xl font-semibold text-slate-950">
+              <p className="mt-2 text-3xl font-semibold text-foreground">
                 {snapshot.products.length}
               </p>
             </div>

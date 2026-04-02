@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, LockKeyhole, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -28,8 +29,9 @@ export default function MareDetailPage() {
   const isNew = mareId === "new";
 
   const haras = getHarasById(harasId);
-  const { mares, upsertMare } = useMockDatabase();
+  const { mares, upsertMare, writeEnabled, error: storageError } = useMockDatabase();
   const { session, can } = useSession();
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!haras) {
     return null;
@@ -54,8 +56,8 @@ export default function MareDetailPage() {
     session.centreId &&
     record.centreId !== session.centreId;
 
-  const handleSave = (draft: MareDraft) => {
-    if (!can("edit")) {
+  const handleSave = async (draft: MareDraft) => {
+    if (!can("edit") || !writeEnabled || isSaving) {
       return;
     }
 
@@ -91,17 +93,30 @@ export default function MareDetailPage() {
       return;
     }
 
-    const savedRecord = upsertMare({
-      ...draft,
-      harasId,
-    });
+    setIsSaving(true);
 
-    toast.success("Fiche enregistrée", {
-      description: `La fiche de ${savedRecord.name} a été mise à jour localement.`,
-    });
+    try {
+      const savedRecord = await upsertMare({
+        ...draft,
+        harasId,
+      });
 
-    if (isNew) {
-      router.replace(buildWorkspacePath(harasId, `juments/${savedRecord.id}`));
+      toast.success("Fiche enregistree", {
+        description: `La fiche de ${savedRecord.name} a ete mise a jour.`,
+      });
+
+      if (isNew) {
+        router.replace(buildWorkspacePath(harasId, `juments/${savedRecord.id}`));
+      }
+    } catch (saveError) {
+      toast.error("Enregistrement impossible", {
+        description:
+          saveError instanceof Error
+            ? saveError.message
+            : storageError ?? "La fiche n'a pas pu etre enregistree.",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -123,14 +138,14 @@ export default function MareDetailPage() {
         />
 
         {isForbiddenCentreRecord ? (
-          <Card className="border-amber-200 bg-amber-50/70">
+          <Card className="border-amber-200 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/12">
             <CardContent className="flex items-start gap-4 p-6">
-              <LockKeyhole className="mt-1 h-5 w-5 text-amber-700" />
+              <LockKeyhole className="mt-1 h-5 w-5 text-amber-700 dark:text-amber-200" />
               <div>
-                <h2 className="text-xl font-semibold text-slate-950">
+                <h2 className="text-xl font-semibold text-foreground">
                   Fiche hors périmètre
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
+                <p className="mt-2 text-sm leading-6 text-amber-900/80 dark:text-amber-100/80">
                   La session actuelle est limitée à un autre centre. Cette fiche ne
                   peut pas être consultée depuis ce profil.
                 </p>
@@ -140,20 +155,35 @@ export default function MareDetailPage() {
         ) : !isNew && !record ? (
           <Card>
             <CardContent className="p-6 text-sm text-muted-foreground">
-              La fiche demandée n'existe pas dans les données mockées.
+              La fiche demandee n'existe pas dans la base active.
             </CardContent>
           </Card>
         ) : isNew && !can("edit") ? (
-          <Card className="border-amber-200 bg-amber-50/70">
+          <Card className="border-amber-200 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/12">
             <CardContent className="flex items-start gap-4 p-6">
-              <Save className="mt-1 h-5 w-5 text-amber-700" />
+              <Save className="mt-1 h-5 w-5 text-amber-700 dark:text-amber-200" />
               <div>
-                <h2 className="text-xl font-semibold text-slate-950">
+                <h2 className="text-xl font-semibold text-foreground">
                   Création désactivée pour ce rôle
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
+                <p className="mt-2 text-sm leading-6 text-amber-900/80 dark:text-amber-100/80">
                   Le rôle courant permet la consultation, mais pas la création d'une
                   nouvelle fiche.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : isNew && !writeEnabled ? (
+          <Card className="border-amber-200 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/12">
+            <CardContent className="flex items-start gap-4 p-6">
+              <Save className="mt-1 h-5 w-5 text-amber-700 dark:text-amber-200" />
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">
+                  Ecriture distante indisponible
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-amber-900/80 dark:text-amber-100/80">
+                  Le stockage Google Sheets n&apos;est pas accessible pour le moment.
+                  {storageError ? ` ${storageError}` : ""}
                 </p>
               </div>
             </CardContent>
@@ -167,7 +197,8 @@ export default function MareDetailPage() {
                 : true,
             )}
             harasLabel={haras.name}
-            readOnly={!can("edit")}
+            readOnly={!can("edit") || !writeEnabled}
+            isSaving={isSaving}
             onSave={handleSave}
           />
         )}

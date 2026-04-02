@@ -120,9 +120,9 @@ export default function CentreDashboardPage() {
               <Badge variant="outline">{centre.manager}</Badge>
             </div>
 
-            <div className="rounded-[1.25rem] border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="rounded-[1.25rem] border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-800/90 dark:bg-slate-950/72">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 dark:bg-amber-400/14 dark:text-amber-200">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 dark:border dark:border-sky-400/20 dark:bg-slate-900/95 dark:text-sky-300">
                   {needsAttention ? (
                     <AlertTriangle className="h-4 w-4" />
                   ) : (
@@ -130,12 +130,12 @@ export default function CentreDashboardPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                  <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                     {needsAttention
                       ? "Relecture a prioriser"
                       : "Centre pret pour la saisie"}
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-300">
                     {needsAttention
                       ? `${centre.pendingReviews} relecture(s) sont encore ouvertes sur ce centre. Commencez par la verification si besoin.`
                       : "Aucune alerte critique. Vous pouvez commencer directement la saisie."}
@@ -160,20 +160,20 @@ export default function CentreDashboardPage() {
               return (
                 <div
                   key={step.id}
-                  className="flex flex-col gap-4 rounded-[1.4rem] border border-slate-200/80 bg-white/88 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-950/65"
+                  className="flex flex-col gap-4 rounded-[1.4rem] border border-slate-200/80 bg-white/88 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800/90 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.9),rgba(15,23,42,0.82))]"
                 >
                   <div className="flex min-w-0 items-start gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 dark:bg-amber-400/14 dark:text-amber-200">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-900 dark:border dark:border-sky-400/20 dark:bg-slate-950/96 dark:text-sky-300">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-base font-semibold text-slate-950 dark:text-slate-50">
+                        <p className="text-base font-semibold text-slate-950 dark:text-slate-100">
                           {step.title}
                         </p>
                         <Badge variant={step.tone}>{step.value}</Badge>
                       </div>
-                      <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-300">
                         {step.description}
                       </p>
                     </div>
@@ -194,14 +194,14 @@ export default function CentreDashboardPage() {
         <Card>
           <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:border dark:border-slate-800 dark:bg-slate-950/95 dark:text-sky-300">
                 <MapPinned className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                <p className="text-sm font-semibold text-slate-950 dark:text-slate-100">
                   Resume du centre
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-300">
                   {snapshot.mares.length} juments, {snapshot.reproductions.length} suivis,
                   {" "}{snapshot.products.length} naissances.
                 </p>

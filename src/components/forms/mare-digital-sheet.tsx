@@ -522,11 +522,11 @@ export const MareDigitalSheet = ({
   const previewFollowUpRow = followUpRows[0];
 
   return (
-    <div className="rounded-[1.75rem] border border-border bg-white/80 p-5 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.35)]">
+    <div className="rounded-[1.75rem] border border-border bg-card/80 p-5 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.35)] dark:bg-card/92 dark:shadow-[0_22px_55px_-36px_rgba(2,6,23,0.82)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="section-caption">Fiche numerique</p>
-          <h3 className="mt-2 text-2xl font-semibold text-slate-950">
+          <h3 className="mt-2 text-2xl font-semibold text-foreground">
             Fiche individuelle de suivi de la jument
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
@@ -541,73 +541,73 @@ export const MareDigitalSheet = ({
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card className="overflow-hidden border-border/70 bg-slate-50/80">
+        <Card className="overflow-hidden border-border/70 bg-muted/40 dark:bg-muted/25">
           <CardContent className="space-y-6 p-0">
-            <div className="border-b border-border/70 bg-[linear-gradient(135deg,rgba(248,250,252,0.95)_0%,rgba(238,242,255,0.92)_48%,rgba(254,243,199,0.9)_100%)] px-6 py-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
+            <div className="border-b border-border/70 bg-[linear-gradient(135deg,rgba(248,250,252,0.95)_0%,rgba(238,242,255,0.92)_48%,rgba(254,243,199,0.9)_100%)] px-6 py-6 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96)_0%,rgba(23,37,84,0.9)_48%,rgba(120,53,15,0.72)_100%)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-300">
                 Fiche individuelle de suivi de la jument
               </p>
-              <h4 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+              <h4 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-slate-50">
                 {formatValue(form.name)}
               </h4>
-              <p className="mt-3 text-sm text-slate-600">
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-200/80">
                 {harasLabel} · {centreLabel} · Saison {formatValue(form.season)}
               </p>
             </div>
 
             <div className="space-y-6 px-6 pb-6">
               <section className="space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Jument
                 </p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {identityFields.map((field) => (
                     <div
                       key={field.label}
-                      className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3"
+                      className="rounded-[1.1rem] border border-border bg-background/90 px-4 py-3 dark:bg-background/45"
                     >
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         {field.label}
                       </p>
-                      <p className="mt-2 text-sm font-medium text-slate-900">{field.value}</p>
+                      <p className="mt-2 text-sm font-medium text-foreground">{field.value}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Proprietaire
                 </p>
                 <div className="grid gap-3">
                   {ownerFields.map((field) => (
                     <div
                       key={field.label}
-                      className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3"
+                      className="rounded-[1.1rem] border border-border bg-background/90 px-4 py-3 dark:bg-background/45"
                     >
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         {field.label}
                       </p>
-                      <p className="mt-2 text-sm font-medium text-slate-900">{field.value}</p>
+                      <p className="mt-2 text-sm font-medium text-foreground">{field.value}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   Suivi / Informations
                 </p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {followUpFields.map((field) => (
                     <div
                       key={field.label}
-                      className="rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3"
+                      className="rounded-[1.1rem] border border-border bg-background/90 px-4 py-3 dark:bg-background/45"
                     >
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         {field.label}
                       </p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-900">
+                      <p className="mt-2 whitespace-pre-wrap text-sm font-medium text-foreground">
                         {field.value}
                       </p>
                     </div>
@@ -617,7 +617,7 @@ export const MareDigitalSheet = ({
 
               {previewFollowUpRow ? (
                 <section className="space-y-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                     Tableau page 2
                   </p>
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -632,14 +632,14 @@ export const MareDigitalSheet = ({
                     ].map((field) => (
                       <div
                         key={field.label}
-                        className={`rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3 ${
+                        className={`rounded-[1.1rem] border border-border bg-background/90 px-4 py-3 dark:bg-background/45 ${
                           field.label === "Commentaire" ? "md:col-span-2 xl:col-span-2" : ""
                         }`}
                       >
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                           {field.label}
                         </p>
-                        <p className="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-900">
+                        <p className="mt-2 whitespace-pre-wrap text-sm font-medium text-foreground">
                           {formatValue(field.value)}
                         </p>
                       </div>
@@ -652,7 +652,7 @@ export const MareDigitalSheet = ({
         </Card>
 
         <div className="space-y-4">
-          <div className="rounded-[1.5rem] border border-border bg-slate-50/70 p-4">
+          <div className="rounded-[1.5rem] border border-border bg-muted/35 p-4 dark:bg-muted/20">
             <p className="section-caption">Modele PDF exact</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               L’aperçu ci-dessous utilise le meme PDF source que celui qui sert de base
@@ -694,7 +694,7 @@ export const MareDigitalSheet = ({
             href={TEMPLATE_PDF_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors hover:text-slate-950"
+            className="inline-flex items-center gap-2 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
           >
             Ouvrir le PDF modele
             <ExternalLink className="h-4 w-4" />

@@ -9,13 +9,24 @@ import {
 } from "react";
 
 import { initialDatabase } from "@/data/mockRecords";
-import { useAdminProvider } from "@/components/providers/admin-provider";
-import { useSession } from "@/components/providers/session-provider";
+import {
+  DatabaseStorageMode,
+  MareInput,
+  ProductInput,
+  ReproductionInput,
+} from "@/lib/database-contract";
+import {
+  DatabaseApiError,
+  fetchDatabaseSnapshot,
+  upsertDatabaseRecord,
+} from "@/lib/database-api";
 import {
   removeLocalStorage,
   readLocalStorage,
   writeLocalStorage,
 } from "@/lib/storage";
+import { useAdminProvider } from "@/components/providers/admin-provider";
+import { useSession } from "@/components/providers/session-provider";
 import {
   ManagedUser,
   MareRecord,
@@ -25,32 +36,20 @@ import {
 
 const DB_STORAGE_KEY = "equine-prototype-db";
 const DB_STORAGE_VERSION_KEY = "equine-prototype-db-version";
-const DB_STORAGE_VERSION = 2;
-
-type MareInput = Omit<
-  MareRecord,
-  "id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy"
-> &
-  Partial<Pick<MareRecord, "id">>;
-type ReproductionInput = Omit<
-  ReproductionRecord,
-  "id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy"
-> &
-  Partial<Pick<ReproductionRecord, "id">>;
-type ProductInput = Omit<
-  ProductRecord,
-  "id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy"
-> &
-  Partial<Pick<ProductRecord, "id">>;
+const DB_STORAGE_VERSION = 3;
 
 interface MockDatabaseContextValue {
   hydrated: boolean;
+  storageMode: DatabaseStorageMode;
+  writeEnabled: boolean;
+  error: string | null;
+  lastSyncedAt: string | null;
   mares: MareRecord[];
   reproductions: ReproductionRecord[];
   products: ProductRecord[];
-  upsertMare: (input: MareInput) => MareRecord;
-  upsertReproduction: (input: ReproductionInput) => ReproductionRecord;
-  upsertProduct: (input: ProductInput) => ProductRecord;
+  upsertMare: (input: MareInput) => Promise<MareRecord>;
+  upsertReproduction: (input: ReproductionInput) => Promise<ReproductionRecord>;
+  upsertProduct: (input: ProductInput) => Promise<ProductRecord>;
   resetDatabase: () => void;
   getScopedSnapshot: (harasId: string, centreId?: string | null) => {
     mares: MareRecord[];
@@ -161,73 +160,121 @@ const withAudit = <T extends AuditedRecord>(
   };
 };
 
+const normalizeSnapshot = (
+  snapshot: {
+    mares: MareRecord[];
+    reproductions: ReproductionRecord[];
+    products: ProductRecord[];
+  },
+  managedUsers: ManagedUser[],
+) => ({
+  mares: (snapshot.mares ?? []).map((record) =>
+    withAudit(normalizeMareRecord(record), managedUsers),
+  ),
+  reproductions: (snapshot.reproductions ?? []).map((record) =>
+    withAudit(normalizeReproductionRecord(record), managedUsers),
+  ),
+  products: (snapshot.products ?? []).map((record) =>
+    withAudit(record, managedUsers),
+  ),
+});
+
+const getSeedSnapshot = (managedUsers: ManagedUser[]) =>
+  normalizeSnapshot(initialDatabase, managedUsers);
+
 export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
   const { directory } = useAdminProvider();
   const { session } = useSession();
-  const [mares, setMares] = useState<MareRecord[]>(() =>
-    initialDatabase.mares.map((record) =>
-      withAudit(normalizeMareRecord(record), directory.managedUsers),
-    ),
-  );
-  const [reproductions, setReproductions] = useState<ReproductionRecord[]>(
-    () =>
-      initialDatabase.reproductions.map((record) =>
-        withAudit(normalizeReproductionRecord(record), directory.managedUsers),
-      ),
-  );
-  const [products, setProducts] = useState<ProductRecord[]>(() =>
-    initialDatabase.products.map((record) => withAudit(record, directory.managedUsers)),
-  );
+
+  const [mares, setMares] = useState<MareRecord[]>([]);
+  const [reproductions, setReproductions] = useState<ReproductionRecord[]>([]);
+  const [products, setProducts] = useState<ProductRecord[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [storageMode, setStorageMode] = useState<DatabaseStorageMode>("local");
+  const [writeEnabled, setWriteEnabled] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedVersion = readLocalStorage<number>(DB_STORAGE_VERSION_KEY, 0);
+    let cancelled = false;
 
-    if (storedVersion !== DB_STORAGE_VERSION) {
-      removeLocalStorage(DB_STORAGE_KEY);
-      setMares(
-        initialDatabase.mares.map((record) =>
-          withAudit(normalizeMareRecord(record), directory.managedUsers),
-        ),
-      );
-      setReproductions(
-        initialDatabase.reproductions.map((record) =>
-          withAudit(normalizeReproductionRecord(record), directory.managedUsers),
-        ),
-      );
-      setProducts(
-        initialDatabase.products.map((record) => withAudit(record, directory.managedUsers)),
-      );
-      writeLocalStorage(DB_STORAGE_VERSION_KEY, DB_STORAGE_VERSION);
-      setHydrated(true);
-      return;
-    }
-
-    const stored = readLocalStorage<{
+    const applySnapshot = (snapshot: {
       mares: MareRecord[];
       reproductions: ReproductionRecord[];
       products: ProductRecord[];
-    } | null>(DB_STORAGE_KEY, null);
+    }) => {
+      const normalized = normalizeSnapshot(snapshot, directory.managedUsers);
 
-    if (stored) {
-      setMares(
-        (stored.mares ?? initialDatabase.mares).map((record) =>
-          withAudit(normalizeMareRecord(record), directory.managedUsers),
-        ),
-      );
-      setReproductions(
-        (stored.reproductions ?? initialDatabase.reproductions).map((record) =>
-          withAudit(normalizeReproductionRecord(record), directory.managedUsers),
-        ),
-      );
-      setProducts(
-        (stored.products ?? initialDatabase.products).map((record) =>
-          withAudit(record, directory.managedUsers),
-        ),
-      );
-    }
+      setMares(normalized.mares);
+      setReproductions(normalized.reproductions);
+      setProducts(normalized.products);
+    };
 
-    setHydrated(true);
+    const loadDatabase = async () => {
+      const storedVersion = readLocalStorage<number>(DB_STORAGE_VERSION_KEY, 0);
+
+      if (storedVersion !== DB_STORAGE_VERSION) {
+        removeLocalStorage(DB_STORAGE_KEY);
+        writeLocalStorage(DB_STORAGE_VERSION_KEY, DB_STORAGE_VERSION);
+      }
+
+      const cachedSnapshot = readLocalStorage<{
+        mares: MareRecord[];
+        reproductions: ReproductionRecord[];
+        products: ProductRecord[];
+      } | null>(DB_STORAGE_KEY, null);
+      const fallbackSnapshot = cachedSnapshot ?? getSeedSnapshot(directory.managedUsers);
+
+      try {
+        const response = await fetchDatabaseSnapshot();
+
+        if (cancelled) {
+          return;
+        }
+
+        applySnapshot(response.snapshot);
+        setStorageMode("google-sheets");
+        setWriteEnabled(true);
+        setError(null);
+        setLastSyncedAt(response.lastSyncedAt);
+        setHydrated(true);
+        return;
+      } catch (loadError) {
+        if (cancelled) {
+          return;
+        }
+
+        applySnapshot(fallbackSnapshot);
+
+        if (
+          loadError instanceof DatabaseApiError &&
+          loadError.code === "storage_unconfigured"
+        ) {
+          setStorageMode("local");
+          setWriteEnabled(true);
+          setError(null);
+          setLastSyncedAt(null);
+          setHydrated(true);
+          return;
+        }
+
+        setStorageMode("google-sheets");
+        setWriteEnabled(false);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Le stockage Google Sheets est indisponible.",
+        );
+        setLastSyncedAt(null);
+        setHydrated(true);
+      }
+    };
+
+    void loadDatabase();
+
+    return () => {
+      cancelled = true;
+    };
   }, [directory.managedUsers]);
 
   useEffect(() => {
@@ -235,6 +282,7 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    writeLocalStorage(DB_STORAGE_VERSION_KEY, DB_STORAGE_VERSION);
     writeLocalStorage(DB_STORAGE_KEY, {
       mares,
       reproductions,
@@ -242,11 +290,41 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [hydrated, mares, products, reproductions]);
 
-  const upsertMare = (input: MareInput) => {
+  const actor = session.displayName ?? session.username ?? "admin.sorec";
+
+  const upsertMare = async (input: MareInput) => {
+    if (storageMode === "google-sheets") {
+      if (!writeEnabled) {
+        throw new Error(error ?? "Le stockage Google Sheets est indisponible.");
+      }
+
+      const response = await upsertDatabaseRecord({
+        entity: "mares",
+        record: input,
+        actor,
+      });
+      const savedRecord = withAudit(
+        normalizeMareRecord(response.record),
+        directory.managedUsers,
+      );
+
+      setMares((currentRecords) =>
+        byUpdatedAt(
+          currentRecords.some((record) => record.id === savedRecord.id)
+            ? currentRecords.map((record) =>
+                record.id === savedRecord.id ? savedRecord : record,
+              )
+            : [savedRecord, ...currentRecords],
+        ),
+      );
+      setLastSyncedAt(response.lastSyncedAt);
+      setError(null);
+
+      return savedRecord;
+    }
+
     const timestamp = new Date().toISOString();
     const existing = mares.find((record) => record.id === input.id);
-    const actor =
-      session.displayName ?? session.username ?? "admin.sorec";
     const nextRecord: MareRecord = {
       ...normalizeMareRecord(input as MareRecord),
       id: input.id ?? buildId("mare"),
@@ -269,11 +347,39 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     return nextRecord;
   };
 
-  const upsertReproduction = (input: ReproductionInput) => {
+  const upsertReproduction = async (input: ReproductionInput) => {
+    if (storageMode === "google-sheets") {
+      if (!writeEnabled) {
+        throw new Error(error ?? "Le stockage Google Sheets est indisponible.");
+      }
+
+      const response = await upsertDatabaseRecord({
+        entity: "reproductions",
+        record: input,
+        actor,
+      });
+      const savedRecord = withAudit(
+        normalizeReproductionRecord(response.record),
+        directory.managedUsers,
+      );
+
+      setReproductions((currentRecords) =>
+        byUpdatedAt(
+          currentRecords.some((record) => record.id === savedRecord.id)
+            ? currentRecords.map((record) =>
+                record.id === savedRecord.id ? savedRecord : record,
+              )
+            : [savedRecord, ...currentRecords],
+        ),
+      );
+      setLastSyncedAt(response.lastSyncedAt);
+      setError(null);
+
+      return savedRecord;
+    }
+
     const timestamp = new Date().toISOString();
     const existing = reproductions.find((record) => record.id === input.id);
-    const actor =
-      session.displayName ?? session.username ?? "admin.sorec";
     const nextRecord: ReproductionRecord = {
       ...normalizeReproductionRecord(input as ReproductionRecord),
       id: input.id ?? buildId("repr"),
@@ -296,11 +402,36 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     return nextRecord;
   };
 
-  const upsertProduct = (input: ProductInput) => {
+  const upsertProduct = async (input: ProductInput) => {
+    if (storageMode === "google-sheets") {
+      if (!writeEnabled) {
+        throw new Error(error ?? "Le stockage Google Sheets est indisponible.");
+      }
+
+      const response = await upsertDatabaseRecord({
+        entity: "products",
+        record: input,
+        actor,
+      });
+      const savedRecord = withAudit(response.record, directory.managedUsers);
+
+      setProducts((currentRecords) =>
+        byUpdatedAt(
+          currentRecords.some((record) => record.id === savedRecord.id)
+            ? currentRecords.map((record) =>
+                record.id === savedRecord.id ? savedRecord : record,
+              )
+            : [savedRecord, ...currentRecords],
+        ),
+      );
+      setLastSyncedAt(response.lastSyncedAt);
+      setError(null);
+
+      return savedRecord;
+    }
+
     const timestamp = new Date().toISOString();
     const existing = products.find((record) => record.id === input.id);
-    const actor =
-      session.displayName ?? session.username ?? "admin.sorec";
     const nextRecord: ProductRecord = {
       ...input,
       id: input.id ?? buildId("prod"),
@@ -324,23 +455,16 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const resetDatabase = () => {
-    setMares(
-      initialDatabase.mares.map((record) =>
-        withAudit(normalizeMareRecord(record), directory.managedUsers),
-      ),
-    );
-    setReproductions(
-      initialDatabase.reproductions.map((record) =>
-        withAudit(normalizeReproductionRecord(record), directory.managedUsers),
-      ),
-    );
-    setProducts(
-      initialDatabase.products.map((record) =>
-        withAudit(record, directory.managedUsers),
-      ),
-    );
-    removeLocalStorage(DB_STORAGE_KEY);
-    writeLocalStorage(DB_STORAGE_VERSION_KEY, DB_STORAGE_VERSION);
+    if (storageMode !== "local") {
+      return;
+    }
+
+    const snapshot = getSeedSnapshot(directory.managedUsers);
+    setMares(snapshot.mares);
+    setReproductions(snapshot.reproductions);
+    setProducts(snapshot.products);
+    setError(null);
+    setLastSyncedAt(null);
   };
 
   const getScopedSnapshot = (harasId: string, centreId?: string | null) => ({
@@ -365,6 +489,10 @@ export const MockDatabaseProvider = ({ children }: { children: ReactNode }) => {
     <MockDatabaseContext.Provider
       value={{
         hydrated,
+        storageMode,
+        writeEnabled,
+        error,
+        lastSyncedAt,
         mares,
         reproductions,
         products,

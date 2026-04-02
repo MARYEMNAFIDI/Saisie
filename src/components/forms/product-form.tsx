@@ -72,12 +72,14 @@ export const ProductForm = ({
   initialValue,
   mareOptions,
   readOnly,
+  isSaving = false,
   onSave,
 }: {
   initialValue: ProductDraft;
   mareOptions: MareRecord[];
   readOnly: boolean;
-  onSave: (draft: ProductDraft) => void;
+  isSaving?: boolean;
+  onSave: (draft: ProductDraft) => void | Promise<void>;
 }) => {
   const [form, setForm] = useState<ProductDraft>(initialValue);
 
@@ -88,12 +90,12 @@ export const ProductForm = ({
   const selectedMare = mareOptions.find((mare) => mare.id === form.mareId);
 
   return (
-    <Card className="mx-auto w-full max-w-6xl border-white/80 bg-white/85">
+    <Card className="mx-auto w-full max-w-6xl border-border/70 bg-card/85 dark:bg-card/92">
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="section-caption">Déclaration de naissance</p>
-            <h2 className="mt-2 text-3xl font-semibold text-slate-950">
+            <h2 className="mt-2 text-3xl font-semibold text-foreground">
               Déclarer une naissance
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -105,11 +107,11 @@ export const ProductForm = ({
           </Badge>
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-slate-50/70 p-5">
+        <div className="rounded-[1.5rem] border border-border bg-muted/35 p-5 dark:bg-muted/20">
           <p className="section-caption">Indispensable</p>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label>Jument</Label>
+              <Label required>Jument</Label>
               <Select
                 value={form.mareId}
                 disabled={readOnly}
@@ -137,7 +139,9 @@ export const ProductForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birth-date">Date de naissance</Label>
+              <Label htmlFor="birth-date" required>
+                Date de naissance
+              </Label>
               <Input
                 id="birth-date"
                 type="date"
@@ -152,7 +156,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Sexe</Label>
+              <Label required>Sexe</Label>
               <SelectWithOther
                 value={form.sex}
                 options={productSexOptions}
@@ -170,7 +174,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Déclaration</Label>
+              <Label required>Déclaration</Label>
               <SelectWithOther
                 value={form.declaration}
                 options={declarationOptions}
@@ -188,7 +192,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Identification</Label>
+              <Label required>Identification</Label>
               <SelectWithOther
                 value={form.identification}
                 options={identificationOptions}
@@ -206,7 +210,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Statut</Label>
+              <Label required>Statut</Label>
               <SelectWithOther
                 value={form.productStatus}
                 options={productStatusOptions}
@@ -222,7 +226,9 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="previous-product">Produit precedent</Label>
+              <Label htmlFor="previous-product" required>
+                Produit precedent
+              </Label>
               <Input
                 id="previous-product"
                 value={form.previousProduct}
@@ -236,7 +242,9 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sirema-product">Reference SIREMA</Label>
+              <Label htmlFor="sirema-product" required>
+                Reference SIREMA
+              </Label>
               <Input
                 id="sirema-product"
                 value={form.siremaProduct}
@@ -251,7 +259,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Race</Label>
+              <Label required>Race</Label>
               <SelectWithOther
                 value={form.breed}
                 options={breedOptions}
@@ -263,7 +271,7 @@ export const ProductForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Saison</Label>
+              <Label required>Saison</Label>
               <Select
                 value={form.season}
                 disabled={readOnly}
@@ -291,14 +299,14 @@ export const ProductForm = ({
             <p className="section-caption">Jument selectionnee</p>
             <div className="mt-4 grid gap-3 lg:grid-cols-3">
               <p>
-                <span className="font-semibold text-slate-950">Nom:</span> {selectedMare.name}
+                <span className="font-semibold text-foreground">Nom:</span> {selectedMare.name}
               </p>
               <p>
-                <span className="font-semibold text-slate-950">FARAS:</span>{" "}
+                <span className="font-semibold text-foreground">FARAS:</span>{" "}
                 {selectedMare.farasNumber}
               </p>
               <p>
-                <span className="font-semibold text-slate-950">Proprietaire:</span>{" "}
+                <span className="font-semibold text-foreground">Proprietaire:</span>{" "}
                 {selectedMare.owner}
               </p>
             </div>
@@ -307,9 +315,9 @@ export const ProductForm = ({
 
         {!readOnly ? (
           <div className="flex justify-end">
-            <Button onClick={() => onSave(form)}>
+            <Button disabled={isSaving} onClick={() => void onSave(form)}>
               <Save className="h-4 w-4" />
-              Enregistrer la déclaration
+              {isSaving ? "Enregistrement..." : "Enregistrer la declaration"}
             </Button>
           </div>
         ) : null}

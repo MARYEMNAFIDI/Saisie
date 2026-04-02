@@ -30,7 +30,12 @@ export default function ProductPage() {
   const harasId = params.harasId;
 
   const haras = getHarasById(harasId);
-  const { getScopedSnapshot, upsertProduct } = useMockDatabase();
+  const {
+    getScopedSnapshot,
+    upsertProduct,
+    writeEnabled,
+    error: storageError,
+  } = useMockDatabase();
   const { session, can } = useSession();
   const snapshot = getScopedSnapshot(
     harasId,
@@ -38,6 +43,7 @@ export default function ProductPage() {
   );
 
   const [activeId, setActiveId] = useState<string>("new");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (activeId === "new" || snapshot.products.some((record) => record.id === activeId)) {
@@ -86,8 +92,8 @@ export default function ProductPage() {
       }
     : createEmptyProductDraft(harasId, snapshot.mares[0]);
 
-  const handleSave = (draft: ProductDraft) => {
-    if (!can("edit")) {
+  const handleSave = async (draft: ProductDraft) => {
+    if (!can("edit") || !writeEnabled || isSaving) {
       return;
     }
 
@@ -135,19 +141,32 @@ export default function ProductPage() {
       return;
     }
 
-    const savedRecord = upsertProduct({
-      ...draft,
-      siremaProduct: normalizedSirema,
-      harasId,
-      centreId: mare.centreId,
-      season: draft.season || mare.season,
-      breed: draft.breed || mare.breed,
-    });
+    setIsSaving(true);
 
-    setActiveId(savedRecord.id);
-    toast.success("Declaration enregistree", {
-      description: `La naissance liee a ${mare.name} a ete enregistree localement.`,
-    });
+    try {
+      const savedRecord = await upsertProduct({
+        ...draft,
+        siremaProduct: normalizedSirema,
+        harasId,
+        centreId: mare.centreId,
+        season: draft.season || mare.season,
+        breed: draft.breed || mare.breed,
+      });
+
+      setActiveId(savedRecord.id);
+      toast.success("Declaration enregistree", {
+        description: `La naissance liee a ${mare.name} a ete enregistree.`,
+      });
+    } catch (saveError) {
+      toast.error("Enregistrement impossible", {
+        description:
+          saveError instanceof Error
+            ? saveError.message
+            : storageError ?? "La declaration n'a pas pu etre enregistree.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -161,7 +180,7 @@ export default function ProductPage() {
             <>
               <Button
                 variant="accent"
-                disabled={!can("edit")}
+                disabled={!can("edit") || !writeEnabled || isSaving}
                 onClick={() => setActiveId("new")}
               >
                 <Plus className="h-4 w-4" />
@@ -180,7 +199,8 @@ export default function ProductPage() {
           <ProductForm
             initialValue={initialDraft}
             mareOptions={snapshot.mares}
-            readOnly={!can("edit")}
+            readOnly={!can("edit") || !writeEnabled}
+            isSaving={isSaving}
             onSave={handleSave}
           />
 
@@ -205,12 +225,12 @@ export default function ProductPage() {
                       className={`w-full rounded-[1.25rem] border px-4 py-3 text-left transition-colors ${
                         activeId === record.id
                           ? "border-primary bg-primary/5"
-                          : "border-border bg-white/85 hover:bg-muted/40"
+                          : "border-border bg-card/70 hover:bg-muted/40 dark:bg-card/45"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-slate-950">
+                          <p className="font-semibold text-foreground">
                             {mare?.name ?? "Jument non trouvee"}
                           </p>
                           <p className="mt-1 text-sm text-muted-foreground">

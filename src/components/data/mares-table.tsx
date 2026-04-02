@@ -59,7 +59,7 @@ export const MaresTable = ({
             <TableRow key={record.id}>
               <TableCell>
                 <div>
-                  <p className="font-semibold text-slate-950">{record.name}</p>
+                  <p className="font-semibold text-foreground">{record.name}</p>
                   <p className="text-xs text-muted-foreground">{record.owner}</p>
                 </div>
               </TableCell>

@@ -60,7 +60,7 @@ export const FilterToolbar = ({
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Perimetre: <span className="font-semibold text-slate-950">{harasLabel}</span>
+            Perimetre: <span className="font-semibold text-foreground">{harasLabel}</span>
           </p>
         </div>
 

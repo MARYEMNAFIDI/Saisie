@@ -125,7 +125,7 @@ export const AccessGate = ({
 
   return (
     <div className="flex justify-center py-4 lg:py-8">
-      <Card className="w-full max-w-[760px] border-white/80 bg-white/90">
+      <Card className="w-full max-w-[760px] border-border/70 bg-card/90 dark:bg-card/94">
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -157,14 +157,14 @@ export const AccessGate = ({
                 <div className="rounded-[1.25rem] border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-slate-950">{selectedUser.fullName}</p>
+                      <p className="font-semibold text-foreground">{selectedUser.fullName}</p>
                       <p className="mt-1">{selectedUser.email}</p>
                     </div>
                     <RoleBadge role={selectedUser.role} />
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/12 dark:text-amber-200">
                   Aucun profil actif sur ce perimetre. Creez-le dans{" "}
                   <Link href="/admin" className="font-semibold underline">
                     /admin
@@ -191,8 +191,8 @@ export const AccessGate = ({
               <div
                 className={`rounded-[1.25rem] border px-4 py-3 text-sm ${
                   feedback.type === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-rose-200 bg-rose-50 text-rose-700"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/12 dark:text-emerald-200"
+                    : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/12 dark:text-rose-200"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -218,7 +218,7 @@ export const AccessGate = ({
           <div className="rounded-[1.5rem] border border-border bg-muted/20 p-4">
             <div className="flex items-center gap-3">
               <Sparkles className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold text-slate-950">Ce que change votre role</p>
+              <p className="text-sm font-semibold text-foreground">Ce que change votre role</p>
             </div>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Selon votre profil, certains boutons de modification ou d'export peuvent

@@ -30,7 +30,13 @@ export default function ReproductionPage() {
   const harasId = params.harasId;
 
   const haras = getHarasById(harasId);
-  const { getScopedSnapshot, upsertMare, upsertReproduction } = useMockDatabase();
+  const {
+    getScopedSnapshot,
+    upsertMare,
+    upsertReproduction,
+    writeEnabled,
+    error: storageError,
+  } = useMockDatabase();
   const { session, can } = useSession();
   const snapshot = getScopedSnapshot(
     harasId,
@@ -43,6 +49,7 @@ export default function ReproductionPage() {
   );
 
   const [activeId, setActiveId] = useState<string>("new");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (activeId === "new" || snapshot.reproductions.some((record) => record.id === activeId)) {
@@ -165,8 +172,8 @@ export default function ReproductionPage() {
         session.scope === "centre" ? session.centreId ?? undefined : scopedCentres[0]?.id,
       );
 
-  const handleSave = (draft: CombinedEntryDraft) => {
-    if (!can("edit")) {
+  const handleSave = async (draft: CombinedEntryDraft) => {
+    if (!can("edit") || !writeEnabled || isSaving) {
       return;
     }
 
@@ -195,13 +202,8 @@ export default function ReproductionPage() {
       },
       { valid: Boolean(draft.reproduction.matingType.trim()), label: "Type de saillie" },
       { valid: Boolean(draft.reproduction.firstCycleDate.trim()), label: "Date cycle 1" },
-      { valid: Boolean(draft.reproduction.secondCycleDate.trim()), label: "Date cycle 2" },
-      { valid: Boolean(draft.reproduction.thirdCycleDate.trim()), label: "Date cycle 3" },
-      { valid: Boolean(draft.reproduction.fourthCycleDate.trim()), label: "Date cycle 4" },
       { valid: Boolean(draft.reproduction.diagnosis.trim()), label: "Diagnostic" },
       { valid: Boolean(draft.reproduction.dpsNumber.trim()), label: "N DPS" },
-      { valid: Boolean(draft.reproduction.latestFinding.trim()), label: "Dernier constat" },
-      { valid: Boolean(draft.reproduction.observations.trim()), label: "Observations" },
       {
         valid: Boolean(draft.reproduction.farasEntryStatus.trim()),
         label: "Saisie sur FARAS",
@@ -287,26 +289,39 @@ export default function ReproductionPage() {
       return;
     }
 
-    const savedMare = upsertMare({
-      ...draft.mare,
-      harasId,
-      centreId: draft.mare.centreId,
-      season: draft.mare.season,
-    });
+    setIsSaving(true);
 
-    const savedRecord = upsertReproduction({
-      ...draft.reproduction,
-      previousProductSirema: normalizedPreviousProductSirema,
-      harasId,
-      mareId: savedMare.id,
-      centreId: savedMare.centreId,
-      season: draft.reproduction.season || savedMare.season,
-    });
+    try {
+      const savedMare = await upsertMare({
+        ...draft.mare,
+        harasId,
+        centreId: draft.mare.centreId,
+        season: draft.mare.season,
+      });
 
-    setActiveId(savedRecord.id);
-    toast.success("Saisie enregistree", {
-      description: `La fiche de ${savedMare.name} et son suivi reproduction sont enregistres.`,
-    });
+      const savedRecord = await upsertReproduction({
+        ...draft.reproduction,
+        previousProductSirema: normalizedPreviousProductSirema,
+        harasId,
+        mareId: savedMare.id,
+        centreId: savedMare.centreId,
+        season: draft.reproduction.season || savedMare.season,
+      });
+
+      setActiveId(savedRecord.id);
+      toast.success("Saisie enregistree", {
+        description: `La fiche de ${savedMare.name} et son suivi reproduction sont enregistres.`,
+      });
+    } catch (saveError) {
+      toast.error("Enregistrement impossible", {
+        description:
+          saveError instanceof Error
+            ? saveError.message
+            : storageError ?? "La saisie reproduction n'a pas pu etre enregistree.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -320,7 +335,7 @@ export default function ReproductionPage() {
             <>
               <Button
                 variant="accent"
-                disabled={!can("edit")}
+                disabled={!can("edit") || !writeEnabled || isSaving}
                 onClick={() => setActiveId("new")}
               >
                 <Plus className="h-4 w-4" />
@@ -340,7 +355,8 @@ export default function ReproductionPage() {
             initialValue={initialDraft}
             centres={scopedCentres}
             harasLabel={haras.name}
-            readOnly={!can("edit")}
+            readOnly={!can("edit") || !writeEnabled}
+            isSaving={isSaving}
             onSave={handleSave}
           />
 
@@ -365,12 +381,12 @@ export default function ReproductionPage() {
                       className={`w-full rounded-[1.25rem] border px-4 py-3 text-left transition-colors ${
                         activeId === record.id
                           ? "border-primary bg-primary/5"
-                          : "border-border bg-white/85 hover:bg-muted/40"
+                          : "border-border bg-card/70 hover:bg-muted/40 dark:bg-card/45"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-slate-950">
+                          <p className="font-semibold text-foreground">
                             {mare?.name ?? "Jument non trouvee"}
                           </p>
                           <p className="mt-1 text-sm text-muted-foreground">

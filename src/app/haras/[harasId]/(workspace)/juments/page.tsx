@@ -89,7 +89,7 @@ export default function MareListPage() {
           description="Commencez ici pour rechercher une fiche, verifier les informations d'une jument ou preparer la saisie de reproduction."
           actions={
             <>
-              <Badge variant="outline" className="bg-white/80">
+              <Badge variant="outline" className="bg-card/80 dark:bg-card/65">
                 {filteredRecords.length} resultat(s)
               </Badge>
               {capabilities.canEdit ? (

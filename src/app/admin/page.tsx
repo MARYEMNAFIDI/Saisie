@@ -393,7 +393,8 @@ export default function AdminPage() {
     updateAdminAccountPassword,
     resetDirectory,
   } = useAdminProvider();
-  const { mares, reproductions, products } = useMockDatabase();
+  const { mares, reproductions, products, hydrated: databaseHydrated } =
+    useMockDatabase();
 
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [userDraft, setUserDraft] = useState<UserDraft>(createUserDraft());
@@ -881,7 +882,7 @@ export default function AdminPage() {
     setIsExcelModalOpen(false);
   };
 
-  if (!hydrated) {
+  if (!hydrated || !databaseHydrated) {
     return (
       <main className="container space-y-6 py-8 lg:py-10">
         <Skeleton className="h-28 w-full rounded-[2rem]" />
@@ -1152,7 +1153,7 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Portail admin"
         title="Administration des acces et des donnees"
-        description="Pilotage central des comptes admin, utilisateurs metier, acces par haras et exports structures de la base mockee."
+        description="Pilotage central des comptes admin, utilisateurs metier, acces par haras et exports structures de la base applicative."
         actions={
           <>
             <Button asChild variant="outline">
@@ -1669,13 +1670,13 @@ export default function AdminPage() {
         <TabsContent value="database" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Filtrer la base mockee</CardTitle>
+              <CardTitle>Filtrer la base applicative</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Visualisez la base mockee avec sa piste d'audit: creation,
+                    Visualisez la base applicative avec sa piste d'audit: creation,
                     derniere modification, auteur et perimetre de saisie.
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">

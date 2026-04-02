@@ -26,7 +26,7 @@ export default function AccessPage() {
         title={scope === "haras" ? haras?.name ?? "Haras" : centre?.name ?? "Centre"}
         description="Choisissez votre profil, saisissez votre mot de passe, puis ouvrez directement votre espace de travail."
         actions={
-          <Badge variant="outline" className="bg-white/80">
+          <Badge variant="outline" className="bg-card/80 dark:bg-card/65">
             <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
             Mot de passe requis
           </Badge>

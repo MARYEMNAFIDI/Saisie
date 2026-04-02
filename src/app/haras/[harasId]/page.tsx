@@ -106,7 +106,7 @@ export default async function HarasDetailPage({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="section-caption">Choisir un centre</p>
-            <h2 className="text-3xl font-semibold text-slate-950">
+            <h2 className="text-3xl font-semibold text-foreground">
               Entrer dans le bon centre
             </h2>
           </div>

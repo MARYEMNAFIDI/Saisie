@@ -172,13 +172,15 @@ export const CombinedMareReproductionForm = ({
   centres,
   harasLabel,
   readOnly,
+  isSaving = false,
   onSave,
 }: {
   initialValue: CombinedEntryDraft;
   centres: Centre[];
   harasLabel: string;
   readOnly: boolean;
-  onSave: (draft: CombinedEntryDraft) => void;
+  isSaving?: boolean;
+  onSave: (draft: CombinedEntryDraft) => void | Promise<void>;
 }) => {
   const [form, setForm] = useState<CombinedEntryDraft>(initialValue);
 
@@ -270,17 +272,27 @@ export const CombinedMareReproductionForm = ({
         form.reproduction.followUpComment || form.reproduction.latestFinding,
     },
   ];
+  const isRefusalReasonRequired = form.mare.admissionStatus === "refusee";
+  const isFarasReasonRequired = form.reproduction.farasEntryStatus === "NON";
+  const isLatestFindingRequired =
+    form.reproduction.heatReturn ||
+    form.reproduction.abortion ||
+    form.reproduction.embryoResorption ||
+    form.reproduction.nonOvulation ||
+    form.reproduction.uterineInfection ||
+    form.reproduction.twinPregnancy ||
+    form.reproduction.traumaticAccident;
 
   return (
-    <Card className="mx-auto w-full max-w-6xl border-white/80 bg-white/85">
+    <Card className="mx-auto w-full max-w-6xl border-border/70 bg-card/85 dark:border-slate-800/90 dark:bg-slate-950/88">
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="section-caption">Reproduction</p>
-            <h2 className="mt-2 text-3xl font-semibold text-slate-950">
+            <h2 className="mt-2 text-3xl font-semibold text-foreground">
               Formulaire reproduction
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground dark:text-slate-300">
               Formulaire automatique complet pour la fiche jument et le bilan reproduction.
             </p>
           </div>
@@ -288,7 +300,7 @@ export const CombinedMareReproductionForm = ({
             <Button
               type="button"
               variant="outline"
-              className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800"
+              className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/12 dark:text-emerald-200 dark:hover:border-emerald-400/40 dark:hover:bg-emerald-500/18 dark:hover:text-emerald-100"
               onClick={() =>
                 downloadMareDigitalSheet({
                   form: form.mare,
@@ -298,7 +310,7 @@ export const CombinedMareReproductionForm = ({
                 })
               }
             >
-              <Download className="h-4 w-4 text-emerald-600" />
+              <Download className="h-4 w-4 text-emerald-600 dark:text-emerald-200" />
               Telecharger fiche de suivie jument
             </Button>
             <Badge variant={readOnly ? "warning" : "success"}>
@@ -307,11 +319,13 @@ export const CombinedMareReproductionForm = ({
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-slate-50/70 p-5">
+        <div className="rounded-[1.5rem] border border-border bg-muted/35 p-5 dark:border-slate-800/80 dark:bg-slate-900/54">
           <p className="section-caption">Bloc jument</p>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="mare-name">Nom de la jument</Label>
+              <Label htmlFor="mare-name" required>
+                Nom de la jument
+              </Label>
               <Input
                 id="mare-name"
                 value={form.mare.name}
@@ -325,7 +339,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mare-faras">Numero FARAS</Label>
+              <Label htmlFor="mare-faras" required>
+                Numero FARAS
+              </Label>
               <Input
                 id="mare-faras"
                 value={form.mare.farasNumber}
@@ -359,7 +375,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Centre</Label>
+              <Label required>Centre</Label>
               <Select
                 value={form.mare.centreId}
                 disabled={readOnly}
@@ -383,7 +399,7 @@ export const CombinedMareReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Race</Label>
+              <Label required>Race</Label>
               <SelectWithOther
                 value={form.mare.breed}
                 options={breedOptions}
@@ -398,7 +414,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mare-birth-date">Date naissance jument</Label>
+              <Label htmlFor="mare-birth-date" required>
+                Date naissance jument
+              </Label>
               <Input
                 id="mare-birth-date"
                 type="date"
@@ -437,7 +455,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Saison</Label>
+              <Label required>Saison</Label>
               <Select
                 value={form.mare.season}
                 disabled={readOnly}
@@ -461,7 +479,9 @@ export const CombinedMareReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mare-bcs">Note BCS</Label>
+              <Label htmlFor="mare-bcs" required>
+                Note BCS
+              </Label>
               <Input
                 id="mare-bcs"
                 value={form.mare.bcs}
@@ -496,7 +516,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mare-owner">Proprietaire - nom et prenom</Label>
+              <Label htmlFor="mare-owner" required>
+                Proprietaire - nom et prenom
+              </Label>
               <Input
                 id="mare-owner"
                 value={form.mare.owner}
@@ -541,7 +563,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Statut</Label>
+              <Label required>Statut</Label>
               <SelectWithOther
                 value={form.mare.physiologicalStatus}
                 options={physiologicalStatusOptions}
@@ -640,10 +662,12 @@ export const CombinedMareReproductionForm = ({
           </div>
 
           {form.mare.admissionStatus === "refusee" ? (
-            <div className="mt-5 rounded-[1.25rem] border border-rose-200 bg-rose-50/80 p-4">
+            <div className="mt-5 rounded-[1.25rem] border border-rose-200 bg-rose-50/80 p-4 dark:border-rose-500/30 dark:bg-rose-500/12">
               <div className="space-y-2">
-                <Label htmlFor="mare-refusal">Motif de refus</Label>
-                <p className="text-sm text-rose-700">
+                <Label htmlFor="mare-refusal" required={isRefusalReasonRequired}>
+                  Motif de refus
+                </Label>
+                <p className="text-sm text-rose-700 dark:text-rose-200">
                   Si la jument est refusee, saisissez ici le motif du refus.
                 </p>
                 <Textarea
@@ -666,11 +690,11 @@ export const CombinedMareReproductionForm = ({
           ) : null}
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-white/70 p-5">
+        <div className="rounded-[1.5rem] border border-border bg-card/60 p-5 dark:border-slate-800/80 dark:bg-slate-950/72">
           <p className="section-caption">Bloc reproduction</p>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label>Étalon</Label>
+              <Label required>Étalon</Label>
               <SelectWithOther
                 value={form.reproduction.stallion}
                 options={stallionChoices}
@@ -689,7 +713,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="stallion-faras">N FARAS de l etalon</Label>
+              <Label htmlFor="stallion-faras" required>
+                N FARAS de l etalon
+              </Label>
               <Input
                 id="stallion-faras"
                 value={form.reproduction.stallionFarasNumber}
@@ -706,7 +732,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="stallion-birth-date">Date de naissance de l etalon</Label>
+              <Label htmlFor="stallion-birth-date" required>
+                Date de naissance de l etalon
+              </Label>
               <Input
                 id="stallion-birth-date"
                 type="date"
@@ -724,7 +752,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Race de l etalon</Label>
+              <Label required>Race de l etalon</Label>
               <SelectWithOther
                 value={form.reproduction.stallionBreed}
                 options={breedOptions}
@@ -742,7 +770,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Categorie etalon</Label>
+              <Label required>Categorie etalon</Label>
               <SelectWithOther
                 value={form.reproduction.stallionCategory}
                 options={stallionCategoryOptions}
@@ -763,7 +791,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Type de saillie</Label>
+              <Label required>Type de saillie</Label>
               <SelectWithOther
                 value={form.reproduction.matingType}
                 options={matingTypeOptions}
@@ -782,7 +810,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cycle-1">Date cycle 1</Label>
+              <Label htmlFor="cycle-1" required>
+                Date cycle 1
+              </Label>
               <Input
                 id="cycle-1"
                 type="date"
@@ -905,7 +935,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Diagnostic</Label>
+              <Label required>Diagnostic</Label>
               <SelectWithOther
                 value={form.reproduction.diagnosis}
                 options={diagnosisOptions}
@@ -924,7 +954,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dps-number">N DPS</Label>
+              <Label htmlFor="dps-number" required>
+                N DPS
+              </Label>
               <Input
                 id="dps-number"
                 value={form.reproduction.dpsNumber}
@@ -941,7 +973,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Saisie sur FARAS</Label>
+              <Label required>Saisie sur FARAS</Label>
               <SelectWithOther
                 value={form.reproduction.farasEntryStatus}
                 options={yesNoOptions}
@@ -959,7 +991,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="latest-finding">Dernier constat</Label>
+              <Label htmlFor="latest-finding" required={isLatestFindingRequired}>
+                Dernier constat
+              </Label>
               <Input
                 id="latest-finding"
                 value={form.reproduction.latestFinding}
@@ -978,7 +1012,7 @@ export const CombinedMareReproductionForm = ({
             <div className="space-y-4 lg:col-span-2">
               <div>
                 <p className="section-caption">Tableau de suivi</p>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-sm text-muted-foreground dark:text-slate-300">
                   Renseignez la ligne de suivi clinique associee a cette saisie.
                 </p>
               </div>
@@ -1107,7 +1141,9 @@ export const CombinedMareReproductionForm = ({
             </div>
             {form.reproduction.farasEntryStatus === "NON" ? (
               <div className="space-y-2 lg:col-span-2">
-                <Label htmlFor="faras-reason">Cause (si NON)</Label>
+                <Label htmlFor="faras-reason" required={isFarasReasonRequired}>
+                  Cause (si NON)
+                </Label>
                 <Input
                   id="faras-reason"
                   value={form.reproduction.farasEntryReason}
@@ -1125,7 +1161,9 @@ export const CombinedMareReproductionForm = ({
               </div>
             ) : null}
             <div className="space-y-2">
-              <Label htmlFor="prev-sirema">SIREMA produit N-1</Label>
+              <Label htmlFor="prev-sirema" required>
+                SIREMA produit N-1
+              </Label>
               <Input
                 id="prev-sirema"
                 value={form.reproduction.previousProductSirema}
@@ -1143,7 +1181,9 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="prev-birth">Date naissance produit N-1</Label>
+              <Label htmlFor="prev-birth" required>
+                Date naissance produit N-1
+              </Label>
               <Input
                 id="prev-birth"
                 type="date"
@@ -1161,7 +1201,7 @@ export const CombinedMareReproductionForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Sexe produit N-1</Label>
+              <Label required>Sexe produit N-1</Label>
               <Select
                 value={form.reproduction.previousProductSex}
                 disabled={readOnly}
@@ -1185,7 +1225,7 @@ export const CombinedMareReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Race produit N-1</Label>
+              <Label required>Race produit N-1</Label>
               <Select
                 value={form.reproduction.previousProductBreed}
                 disabled={readOnly}
@@ -1212,7 +1252,7 @@ export const CombinedMareReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Declaration produit N-1</Label>
+              <Label required>Declaration produit N-1</Label>
               <Select
                 value={form.reproduction.previousProductDeclaration}
                 disabled={readOnly}
@@ -1237,7 +1277,7 @@ export const CombinedMareReproductionForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Identification produit N-1</Label>
+              <Label required>Identification produit N-1</Label>
               <Select
                 value={form.reproduction.previousProductIdentification}
                 disabled={readOnly}
@@ -1287,7 +1327,7 @@ export const CombinedMareReproductionForm = ({
               {reproductionIncidentOptions.map((item) => (
                 <label
                   key={item.key}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm font-medium text-foreground"
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm font-medium text-foreground dark:border-slate-700/80 dark:bg-slate-900/84 dark:text-slate-100"
                 >
                   <span>{item.label}</span>
                   <input
@@ -1312,19 +1352,19 @@ export const CombinedMareReproductionForm = ({
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-muted/30 p-5">
+        <div className="rounded-[1.5rem] border border-border bg-muted/30 p-5 dark:border-slate-800/80 dark:bg-slate-900/44">
           <p className="section-caption">Contexte de saisie</p>
           <div className="mt-4 grid gap-3 text-sm text-muted-foreground lg:grid-cols-3">
             <p>
-              <span className="font-semibold text-slate-950">Centre:</span>{" "}
+              <span className="font-semibold text-foreground">Centre:</span>{" "}
               {selectedCentre?.name ?? "Non selectionne"}
             </p>
             <p>
-              <span className="font-semibold text-slate-950">Saison:</span>{" "}
+              <span className="font-semibold text-foreground">Saison:</span>{" "}
               {form.mare.season}
             </p>
             <p>
-              <span className="font-semibold text-slate-950">Resultat cycle:</span>{" "}
+              <span className="font-semibold text-foreground">Resultat cycle:</span>{" "}
               {form.reproduction.cycleResult}
             </p>
           </div>
@@ -1332,9 +1372,9 @@ export const CombinedMareReproductionForm = ({
 
         {!readOnly ? (
           <div className="flex justify-end">
-            <Button onClick={() => onSave(form)}>
+            <Button disabled={isSaving} onClick={() => void onSave(form)}>
               <Save className="h-4 w-4" />
-              Enregistrer la reproduction
+              {isSaving ? "Enregistrement..." : "Enregistrer la reproduction"}
             </Button>
           </div>
         ) : null}

@@ -45,6 +45,41 @@
       0 20px 34px -24px rgba(167, 125, 67, 0.26);
     --topbar-bg: rgba(244, 241, 235, 0.78);
     --topbar-border: rgba(168, 143, 110, 0.5);
+    --portal-video-veil: rgba(2, 6, 23, 0.48);
+    --portal-hero-overlay: linear-gradient(
+      to bottom,
+      rgba(2, 6, 23, 0.84) 0%,
+      rgba(2, 6, 23, 0.58) 18%,
+      rgba(2, 6, 23, 0.5) 42%,
+      rgba(2, 6, 23, 0.72) 74%,
+      rgba(2, 6, 23, 0.9) 100%
+    );
+    --portal-top-overlay: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.88) 0%,
+      rgba(0, 0, 0, 0.56) 55%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    --portal-radial-overlay:
+      radial-gradient(circle at top, rgba(56, 189, 248, 0.16), transparent 28%),
+      radial-gradient(circle at 80% 18%, rgba(245, 158, 11, 0.12), transparent 18%);
+    --portal-center-glow: radial-gradient(
+      circle,
+      rgba(193, 139, 56, 0.16),
+      transparent 68%
+    );
+    --portal-badge-border: rgba(216, 176, 122, 0.45);
+    --portal-badge-from: rgba(246, 232, 212, 0.94);
+    --portal-badge-to: rgba(226, 191, 143, 0.9);
+    --portal-badge-text: #5f3f1b;
+    --portal-badge-shadow: 0 18px 40px -28px rgba(191, 138, 74, 0.62);
+    --portal-highlight: #fcd34d;
+    --portal-copy: rgba(255, 255, 255, 0.8);
+    --portal-rule: rgba(252, 211, 77, 0.75);
+    --portal-button-border: rgba(255, 255, 255, 0.16);
+    --portal-button-bg: rgba(0, 0, 0, 0.36);
+    --portal-button-hover-bg: rgba(0, 0, 0, 0.52);
+    --portal-button-shadow: 0 24px 46px -30px rgba(2, 6, 23, 0.72);
   }
 
   [data-theme="fintech"] {
@@ -87,6 +122,41 @@
       0 18px 34px -22px rgba(3, 105, 161, 0.2);
     --topbar-bg: rgba(232, 247, 244, 0.8);
     --topbar-border: rgba(148, 208, 198, 0.54);
+    --portal-video-veil: rgba(2, 12, 18, 0.42);
+    --portal-hero-overlay: linear-gradient(
+      to bottom,
+      rgba(4, 47, 46, 0.84) 0%,
+      rgba(6, 78, 59, 0.58) 18%,
+      rgba(8, 145, 178, 0.26) 42%,
+      rgba(3, 105, 161, 0.54) 74%,
+      rgba(8, 47, 73, 0.86) 100%
+    );
+    --portal-top-overlay: linear-gradient(
+      to bottom,
+      rgba(3, 37, 32, 0.9) 0%,
+      rgba(4, 47, 46, 0.52) 55%,
+      rgba(4, 47, 46, 0) 100%
+    );
+    --portal-radial-overlay:
+      radial-gradient(circle at top, rgba(45, 212, 191, 0.2), transparent 28%),
+      radial-gradient(circle at 80% 18%, rgba(56, 189, 248, 0.18), transparent 18%);
+    --portal-center-glow: radial-gradient(
+      circle,
+      rgba(45, 212, 191, 0.18),
+      transparent 68%
+    );
+    --portal-badge-border: rgba(94, 234, 212, 0.42);
+    --portal-badge-from: rgba(220, 252, 231, 0.94);
+    --portal-badge-to: rgba(153, 246, 228, 0.88);
+    --portal-badge-text: #065f46;
+    --portal-badge-shadow: 0 18px 40px -28px rgba(13, 148, 136, 0.44);
+    --portal-highlight: #67e8f9;
+    --portal-copy: rgba(236, 253, 245, 0.84);
+    --portal-rule: rgba(45, 212, 191, 0.76);
+    --portal-button-border: rgba(94, 234, 212, 0.24);
+    --portal-button-bg: rgba(2, 44, 34, 0.42);
+    --portal-button-hover-bg: rgba(2, 44, 34, 0.58);
+    --portal-button-shadow: 0 24px 46px -30px rgba(4, 47, 46, 0.62);
   }
 
   [data-theme="midnight"] {
@@ -129,6 +199,41 @@
       0 18px 32px -22px rgba(56, 189, 248, 0.2);
     --topbar-bg: rgba(10, 18, 33, 0.84);
     --topbar-border: rgba(71, 85, 105, 0.58);
+    --portal-video-veil: rgba(2, 6, 23, 0.42);
+    --portal-hero-overlay: linear-gradient(
+      to bottom,
+      rgba(2, 6, 23, 0.84) 0%,
+      rgba(15, 23, 42, 0.6) 18%,
+      rgba(15, 23, 42, 0.46) 42%,
+      rgba(14, 30, 64, 0.68) 74%,
+      rgba(2, 6, 23, 0.88) 100%
+    );
+    --portal-top-overlay: linear-gradient(
+      to bottom,
+      rgba(2, 6, 23, 0.9) 0%,
+      rgba(2, 6, 23, 0.54) 55%,
+      rgba(2, 6, 23, 0) 100%
+    );
+    --portal-radial-overlay:
+      radial-gradient(circle at top, rgba(56, 189, 248, 0.18), transparent 28%),
+      radial-gradient(circle at 80% 18%, rgba(96, 165, 250, 0.16), transparent 18%);
+    --portal-center-glow: radial-gradient(
+      circle,
+      rgba(56, 189, 248, 0.16),
+      transparent 68%
+    );
+    --portal-badge-border: rgba(125, 211, 252, 0.26);
+    --portal-badge-from: rgba(15, 23, 42, 0.94);
+    --portal-badge-to: rgba(30, 41, 59, 0.92);
+    --portal-badge-text: #dbeafe;
+    --portal-badge-shadow: 0 18px 40px -28px rgba(2, 6, 23, 0.62);
+    --portal-highlight: #7dd3fc;
+    --portal-copy: rgba(226, 232, 240, 0.82);
+    --portal-rule: rgba(125, 211, 252, 0.7);
+    --portal-button-border: rgba(125, 211, 252, 0.2);
+    --portal-button-bg: rgba(15, 23, 42, 0.4);
+    --portal-button-hover-bg: rgba(15, 23, 42, 0.56);
+    --portal-button-shadow: 0 24px 46px -30px rgba(2, 6, 23, 0.8);
   }
 
   * {
@@ -180,5 +285,54 @@
   .soft-grid {
     background-image: theme("backgroundImage.grid");
     background-size: 28px 28px;
+  }
+
+  .portal-video-veil {
+    background: var(--portal-video-veil);
+  }
+
+  .portal-video-gradient {
+    background: var(--portal-hero-overlay);
+  }
+
+  .portal-video-top {
+    background: var(--portal-top-overlay);
+  }
+
+  .portal-video-radial {
+    background: var(--portal-radial-overlay);
+  }
+
+  .portal-center-glow {
+    background: var(--portal-center-glow);
+  }
+
+  .portal-badge {
+    border-color: var(--portal-badge-border);
+    background: linear-gradient(180deg, var(--portal-badge-from) 0%, var(--portal-badge-to) 100%);
+    color: var(--portal-badge-text);
+    box-shadow: var(--portal-badge-shadow);
+  }
+
+  .portal-highlight {
+    color: var(--portal-highlight);
+  }
+
+  .portal-copy {
+    color: var(--portal-copy);
+  }
+
+  .portal-rule {
+    background: linear-gradient(to right, transparent, var(--portal-rule), transparent);
+  }
+
+  .portal-cta {
+    border-color: var(--portal-button-border);
+    background: var(--portal-button-bg);
+    box-shadow: var(--portal-button-shadow);
+  }
+
+  .portal-cta:hover {
+    background: var(--portal-button-hover-bg);
   }
 }

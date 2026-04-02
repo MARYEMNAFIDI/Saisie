@@ -81,13 +81,15 @@ export const MareForm = ({
   centres,
   harasLabel,
   readOnly,
+  isSaving = false,
   onSave,
 }: {
   initialValue: MareDraft;
   centres: Centre[];
   harasLabel: string;
   readOnly: boolean;
-  onSave: (draft: MareDraft) => void;
+  isSaving?: boolean;
+  onSave: (draft: MareDraft) => void | Promise<void>;
 }) => {
   const [form, setForm] = useState<MareDraft>(initialValue);
 
@@ -96,12 +98,12 @@ export const MareForm = ({
   }, [initialValue]);
 
   return (
-    <Card className="mx-auto w-full max-w-6xl border-white/80 bg-white/85">
+    <Card className="mx-auto w-full max-w-6xl border-border/70 bg-card/85 dark:bg-card/92">
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="section-caption">Fiche jument</p>
-            <h2 className="mt-2 text-3xl font-semibold text-slate-950">
+            <h2 className="mt-2 text-3xl font-semibold text-foreground">
               {form.id ? "Mettre à jour la fiche" : "Nouvelle fiche"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -114,11 +116,13 @@ export const MareForm = ({
           </Badge>
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-slate-50/70 p-5">
+        <div className="rounded-[1.5rem] border border-border bg-muted/35 p-5 dark:bg-muted/20">
           <p className="section-caption">Indispensable</p>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="mare-name">Nom de la jument</Label>
+              <Label htmlFor="mare-name" required>
+                Nom de la jument
+              </Label>
               <Input
                 id="mare-name"
                 value={form.name}
@@ -131,7 +135,9 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="faras-number">Numéro FARAS</Label>
+              <Label htmlFor="faras-number" required>
+                Numéro FARAS
+              </Label>
               <Input
                 id="faras-number"
                 value={form.farasNumber}
@@ -144,7 +150,7 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Centre</Label>
+              <Label required>Centre</Label>
               <Select
                 value={form.centreId}
                 disabled={readOnly}
@@ -165,7 +171,7 @@ export const MareForm = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Race</Label>
+              <Label required>Race</Label>
               <SelectWithOther
                 value={form.breed}
                 options={breedOptions}
@@ -177,7 +183,9 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="owner">Propriétaire</Label>
+              <Label htmlFor="owner" required>
+                Propriétaire
+              </Label>
               <Input
                 id="owner"
                 value={form.owner}
@@ -213,10 +221,12 @@ export const MareForm = ({
           </div>
 
           {form.admissionStatus === "refusee" ? (
-            <div className="mt-5 rounded-[1.25rem] border border-rose-200 bg-rose-50/80 p-4">
+            <div className="mt-5 rounded-[1.25rem] border border-rose-200 bg-rose-50/80 p-4 dark:border-rose-500/30 dark:bg-rose-500/12">
               <div className="space-y-2">
-                <Label htmlFor="refusal-reason">Motif de refus</Label>
-                <p className="text-sm text-rose-700">
+                <Label htmlFor="refusal-reason" required>
+                  Motif de refus
+                </Label>
+                <p className="text-sm text-rose-700 dark:text-rose-200">
                   Si la jument est refusee, indiquez ici la raison du refus.
                 </p>
                 <Textarea
@@ -235,13 +245,15 @@ export const MareForm = ({
           ) : null}
         </div>
 
-        <details className="rounded-[1.5rem] border border-border bg-white/70 p-5">
-          <summary className="cursor-pointer list-none text-sm font-semibold text-slate-950">
+        <details className="rounded-[1.5rem] border border-border bg-card/60 p-5 dark:bg-card/35">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
             Informations complémentaires
           </summary>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="birth-date">Date de naissance</Label>
+              <Label htmlFor="birth-date" required>
+                Date de naissance
+              </Label>
               <Input
                 id="birth-date"
                 type="date"
@@ -255,7 +267,7 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Statut physiologique</Label>
+              <Label required>Statut physiologique</Label>
               <SelectWithOther
                 value={form.physiologicalStatus}
                 options={physiologicalStatusOptions}
@@ -270,7 +282,9 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bcs">BCS</Label>
+              <Label htmlFor="bcs" required>
+                BCS
+              </Label>
               <Input
                 id="bcs"
                 value={form.bcs}
@@ -284,7 +298,7 @@ export const MareForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label>Saison</Label>
+              <Label required>Saison</Label>
               <Select
                 value={form.season}
                 disabled={readOnly}
@@ -311,14 +325,14 @@ export const MareForm = ({
           <p className="section-caption">Contexte de saisie</p>
           <div className="mt-4 grid gap-3 text-sm text-muted-foreground lg:grid-cols-3">
             <p>
-              <span className="font-semibold text-slate-950">Haras:</span> {harasLabel}
+              <span className="font-semibold text-foreground">Haras:</span> {harasLabel}
             </p>
             <p>
-              <span className="font-semibold text-slate-950">Centre:</span>{" "}
+              <span className="font-semibold text-foreground">Centre:</span>{" "}
               {centres.find((centre) => centre.id === form.centreId)?.name ?? "Non selectionne"}
             </p>
             <p>
-              <span className="font-semibold text-slate-950">Saison:</span> {form.season}
+              <span className="font-semibold text-foreground">Saison:</span> {form.season}
             </p>
           </div>
         </div>
@@ -331,9 +345,9 @@ export const MareForm = ({
 
         {!readOnly ? (
           <div className="flex justify-end">
-            <Button onClick={() => onSave(form)}>
+            <Button disabled={isSaving} onClick={() => void onSave(form)}>
               <Save className="h-4 w-4" />
-              Enregistrer la fiche
+              {isSaving ? "Enregistrement..." : "Enregistrer la fiche"}
             </Button>
           </div>
         ) : null}

@@ -214,7 +214,7 @@ export const WorkspaceShell = ({ children }: { children: React.ReactNode }) => {
                   className={cn(
                     "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
                     item.active
-                      ? "border border-amber-200 bg-amber-50 text-amber-950 dark:border-sky-400/30 dark:bg-sky-400/12 dark:text-sky-100"
+                      ? "border border-amber-200 bg-amber-50 text-amber-950 dark:border-sky-400/40 dark:bg-[linear-gradient(135deg,rgba(14,165,233,0.22),rgba(15,23,42,0.94))] dark:text-slate-50"
                       : "border border-slate-200 bg-white/85 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/78 dark:text-slate-300 dark:hover:bg-slate-900",
                   )}
                 >

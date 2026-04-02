@@ -114,12 +114,12 @@ export const ReproductionForm = ({
   }, [form.harasId, form.stallion]);
 
   return (
-    <Card className="border-white/80 bg-white/85">
+    <Card className="border-border/70 bg-card/85 dark:bg-card/92">
       <CardContent className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="section-caption">Suivi reproduction</p>
-            <h2 className="mt-2 text-3xl font-semibold text-slate-950">
+            <h2 className="mt-2 text-3xl font-semibold text-foreground">
               Enregistrer un suivi
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -132,7 +132,7 @@ export const ReproductionForm = ({
           </Badge>
         </div>
 
-        <div className="rounded-[1.5rem] border border-border bg-slate-50/70 p-5">
+        <div className="rounded-[1.5rem] border border-border bg-muted/35 p-5 dark:bg-muted/20">
           <p className="section-caption">Indispensable</p>
           <div className="mt-4 grid gap-5 lg:grid-cols-2">
             <div className="space-y-2">
@@ -238,18 +238,18 @@ export const ReproductionForm = ({
             <p className="section-caption">Jument sélectionnée</p>
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <p>
-                <span className="font-semibold text-slate-950">Nom:</span> {selectedMare.name}
+                <span className="font-semibold text-foreground">Nom:</span> {selectedMare.name}
               </p>
               <p>
-                <span className="font-semibold text-slate-950">Saison:</span>{" "}
+                <span className="font-semibold text-foreground">Saison:</span>{" "}
                 {selectedMare.season}
               </p>
             </div>
           </div>
         ) : null}
 
-        <details className="rounded-[1.5rem] border border-border bg-white/70 p-5">
-          <summary className="cursor-pointer list-none text-sm font-semibold text-slate-950">
+        <details className="rounded-[1.5rem] border border-border bg-card/60 p-5 dark:bg-card/35">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-foreground">
             Informations complémentaires
           </summary>
 
@@ -382,11 +382,11 @@ export const ReproductionForm = ({
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-slate-950">Incidents a signaler</p>
+              <p className="text-sm font-semibold text-foreground">Incidents a signaler</p>
               {reproductionIncidentOptions.map((item) => (
                 <label
                   key={item.key}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-white/80 px-4 py-3 text-sm font-medium text-slate-800"
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card/70 px-4 py-3 text-sm font-medium text-foreground dark:bg-card/50"
                 >
                   <span>{item.label}</span>
                   <input
